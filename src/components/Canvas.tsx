@@ -28,7 +28,7 @@ const Canvas: React.FC<CanvasProps> = () => {
   useEffect(() => {
     if (currentExpression.length === 0 || !graph.current) return;
     graph.current.clearGraph();
-    graph.current.drawFunction(currentExpression, 50, '#ff0000');
+    graph.current.drawFunction(currentExpression, 4, '#ff0000');
   }, [currentExpression]);
   return (
     <div>

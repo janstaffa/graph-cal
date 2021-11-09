@@ -20,7 +20,7 @@ const Canvas: React.FC<CanvasProps> = () => {
 
     canvas.current.width = dimensions.width;
     canvas.current.height = dimensions.height;
-    graph.current = new Graph(canvas.current, 40);
+    graph.current = new Graph(canvas.current, 20);
 
     graph.current.initialize();
   }, []);
@@ -34,6 +34,7 @@ const Canvas: React.FC<CanvasProps> = () => {
     <div>
       <div className="toolbox">
         <div className="expression-input">
+          <div className="color-code"></div>
           <label>f(x) = </label>
           <input
             type="text"

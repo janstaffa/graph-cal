@@ -40,7 +40,7 @@ export class Graph {
     this._squareSize = center.x / this.squaresInQuadron;
 
     for (let i = 0; i < this.squaresInQuadron * 2; i++) {
-      for (let j = 0; j < this.squaresInQuadron * 2; j++) {
+      for (let j = 0; j < this.squaresInQuadron; j++) {
         const x = i * this._squareSize;
         const y = j * this._squareSize;
         this.ctx.strokeStyle = SQUARE_BORDER_COLOR;
@@ -65,6 +65,18 @@ export class Graph {
     this.ctx.moveTo(center.x, 0);
     this.ctx.lineTo(center.x, this.ctx.canvas.height);
     this.ctx.stroke();
+
+    this.ctx.font = "15px sans-serif";
+    this.ctx.fillStyle = "#ccc";
+
+    for (let i = -this.squaresInQuadron; i < this.squaresInQuadron * 2; i++) {
+      const realPos = (this.squaresInQuadron + i) * this._squareSize;
+      if (i === this.squaresInQuadron) continue;
+      this.ctx.fillText(i.toString(), realPos - 5, center.y + 20);
+      //this.ctx.fillRect(realPos, center.y - 5, 1.5, 10);
+      //this.ctx.fillRect(center.x - 5, realPos, 10, 1.5);
+    }
+
     return true;
   };
   drawFunctionFromPoints = (data: Point[], color: string) => {
@@ -91,7 +103,8 @@ export class Graph {
         try {
           const y = Parser.evaluate(expression, { x });
           if (y < this.squareSize * (this.squaresInQuadron * 2)) {
-            functionData.push({ x, y });
+            //temporary fix (y: -y to invert x axis)
+            functionData.push({ x, y: -y });
           }
         } catch (e) {}
       }

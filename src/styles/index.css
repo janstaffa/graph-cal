@@ -1,7 +1,7 @@
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
   background-color: #181818;
   width: 100vw;
@@ -22,32 +22,42 @@ main {
 canvas {
   width: 100%;
   height: 100%;
-  transform: scaleY(-1);
+  /*transform: scaleY(-1);*/
   z-index: 0;
 }
 
 .toolbox {
   position: absolute;
-  bottom: 0;
+  bottom: top;
   left: 0;
-  width: 100%;
+  width: 500px;
   height: 100px;
   background-color: #ffffffdf;
   display: flex;
   flex-direction: row;
   align-items: center;
-  padding: 0 50px;
+  justify-content: center;
+  padding: 0 10px;
   box-sizing: border-box;
   z-index: 10;
 }
-
 .expression-input {
   font-size: 20px;
   height: 50px;
   display: flex;
   flex-direction: row;
+  align-items: center;
 }
 
+.color-code {
+  --radius: 15px;
+  width: calc(2 * var(--radius));
+  height: calc(2 * var(--radius));
+  background-color: red;
+  border-radius: 50%;
+  border: 1px solid black;
+  margin-right: 10px;
+}
 .expression-input label {
   display: block;
   background-color: white;

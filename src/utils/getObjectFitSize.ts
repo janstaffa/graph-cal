@@ -1,3 +1,4 @@
+// https://medium.com/@doomgoober/understanding-html-canvas-scaling-and-sizing-c04925d9a830
 export const getObjectFitSize = (
   contains: boolean,
   containerWidth: number,

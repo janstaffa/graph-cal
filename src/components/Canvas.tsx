@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
-import { Graph } from '../graph';
-import { getObjectFitSize } from '../utils/getObjectFitSize';
+import { useEffect, useRef, useState } from "react";
+import { Graph } from "../graph";
+import { getObjectFitSize } from "../utils/getObjectFitSize";
 export interface CanvasProps {}
 
 const Canvas: React.FC<CanvasProps> = () => {
   const canvas = useRef<HTMLCanvasElement>(null);
-  const [currentExpression, setCurrentExpression] = useState<string>('');
+  const [currentExpression, setCurrentExpression] = useState<string>("");
   const graph = useRef<Graph>();
 
   useEffect(() => {
@@ -28,7 +28,7 @@ const Canvas: React.FC<CanvasProps> = () => {
   useEffect(() => {
     if (currentExpression.length === 0 || !graph.current) return;
     graph.current.clearGraph();
-    graph.current.drawFunction(currentExpression, 4, '#ff0000');
+    graph.current.drawFunction(currentExpression, 5, "#ff0000");
   }, [currentExpression]);
   return (
     <div>

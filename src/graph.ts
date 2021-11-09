@@ -1,6 +1,8 @@
-import { Parser } from 'expr-eval';
+import { Parser } from "expr-eval";
+import { randomIntInc } from "./utils/random";
 
-const SQUARE_BORDER_COLOR = '#000';
+const SQUARE_BORDER_COLOR = "#000";
+const AXIS_COLOR = "#666";
 export interface Point {
   x: number;
   y: number;
@@ -15,7 +17,7 @@ export class Graph {
     return this._squareSize;
   }
   constructor(canvas: HTMLCanvasElement, squaresInQuadron: number = 10) {
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     ctx?.translate(0.5, 0.5);
     this.ctx = ctx;
     this.squaresInQuadron = squaresInQuadron;
@@ -50,7 +52,7 @@ export class Graph {
   };
   private drawAxis = (center: Point) => {
     if (!this.ctx) return;
-    this.ctx.strokeStyle = SQUARE_BORDER_COLOR;
+    this.ctx.strokeStyle = AXIS_COLOR;
     this.ctx.lineWidth = 2;
 
     this.ctx.beginPath();
@@ -62,7 +64,6 @@ export class Graph {
     // draw Y axis
     this.ctx.moveTo(center.x, 0);
     this.ctx.lineTo(center.x, this.ctx.canvas.height);
-    this.ctx.closePath();
     this.ctx.stroke();
     return true;
   };
@@ -70,27 +71,21 @@ export class Graph {
     if (!this.ctx || !this.center) return false;
     this.ctx.strokeStyle = color;
     this.ctx.lineWidth = 3;
-    //  this.ctx.moveTo(data[0].x, data[0].y);
     this.ctx.beginPath();
     for (const point of data) {
-      console.log(point);
       const x = this.center.x + point.x * this._squareSize;
       const y = this.center.y + point.y * this._squareSize;
       this.ctx.lineTo(x, y);
     }
-    this.ctx.closePath();
     this.ctx.stroke();
     return true;
   };
 
   drawFunction = (expression: string, points: number, color: string) => {
     const functionData: Point[] = [];
-    const realPoints = this.squaresInQuadron * points;
-    console.log(realPoints);
     for (let i = -this.squaresInQuadron; i < this.squaresInQuadron; i++) {
-      const step = this.squareSize / points;
-      console.log('STEP', step);
-      for (let j = 0; j < points; j += step) {
+      const step = 1 / points;
+      for (let j = 0; j < 1; j += step) {
         const x = i + j;
         // f(x) = x
         try {
@@ -106,7 +101,7 @@ export class Graph {
   };
   clearGraph = () => {
     if (!this.ctx) return false;
-    this.ctx.fillStyle = '#181818';
+    this.ctx.fillStyle = "#181818";
     this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
     this.initialize();
     return true;

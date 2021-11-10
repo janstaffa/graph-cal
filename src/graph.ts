@@ -1,7 +1,7 @@
-import { Parser } from 'expr-eval';
+import { Parser } from "expr-eval";
 
-const SQUARE_BORDER_COLOR = '#000';
-const AXIS_COLOR = '#666';
+const SQUARE_BORDER_COLOR = "#000";
+const AXIS_COLOR = "#666";
 const DEFAULT_POINTS_PER_SQUARE = 5;
 
 export interface Point {
@@ -26,7 +26,7 @@ export class Graph {
     return this._squareSize;
   }
   constructor(canvas: HTMLCanvasElement, squaresInQuadron: number = 10) {
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     ctx?.translate(0.5, 0.5);
     this.ctx = ctx;
     this.squaresInQuadron = squaresInQuadron;
@@ -148,8 +148,8 @@ export class Graph {
     this.ctx.lineTo(center.x, this.ctx.canvas.height);
     this.ctx.stroke();
 
-    this.ctx.font = '12px sans-serif';
-    this.ctx.fillStyle = '#999';
+    this.ctx.font = "12px sans-serif";
+    this.ctx.fillStyle = "#999";
     for (let i = -this.quadrons[0].width; i < this.quadrons[1].width; i++) {
       const realPos = this.center.x + i * this.squareSize;
       this.ctx.fillText(i.toString(), realPos + 5, center.y + 15);

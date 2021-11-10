@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { FaChevronLeft, FaChevronRight, FaTrashAlt } from 'react-icons/fa';
+import { AiOutlineZoomIn, AiOutlineZoomOut } from 'react-icons/ai';
+import {
+  FaChevronLeft,
+  FaChevronRight,
+  FaHome,
+  FaTrashAlt,
+} from 'react-icons/fa';
 import { IoMdAddCircle } from 'react-icons/io';
 import { Graph } from '../graph';
 import { getObjectFitSize } from '../utils/getObjectFitSize';
@@ -11,11 +17,7 @@ interface GraphInput {
   color: string;
 }
 
-const ZOOM_STEP = 3;
-const MAX_ZOOM = {
-  MAX: 200,
-  MIN: 10,
-};
+const ZOOM_STEP = 5;
 const Canvas: React.FC<CanvasProps> = () => {
   const canvas = useRef<HTMLCanvasElement>(null);
   const graph = useRef<Graph>();
@@ -32,6 +34,18 @@ const Canvas: React.FC<CanvasProps> = () => {
   const [graphDetail, setGraphDetail] = useState<number>(15);
   const graphDetailRef = useRef<number>(graphDetail);
   graphDetailRef.current = graphDetail;
+
+  const zoomIn = () => {
+    if (!graph.current) return;
+    const zoomDelta = ZOOM_STEP;
+    graph.current.zoomGraph(zoomDelta);
+  };
+
+  const zoomOut = () => {
+    if (!graph.current) return;
+    const zoomDelta = -ZOOM_STEP;
+    graph.current.zoomGraph(zoomDelta);
+  };
 
   useEffect(() => {
     if (!canvas.current) return;
@@ -50,9 +64,7 @@ const Canvas: React.FC<CanvasProps> = () => {
     graph.current.initialize();
 
     let dragging = false;
-    canvas.current.addEventListener('mousedown', (e) => {
-      dragging = true;
-    });
+    canvas.current.addEventListener('mousedown', () => (dragging = true));
 
     const stopDrag = () => {
       dragging = false;
@@ -65,36 +77,29 @@ const Canvas: React.FC<CanvasProps> = () => {
       if (!dragging || !graph.current) return;
 
       canvas.current?.classList.add('dragging');
-      graph.current.transformGraph({
-        xDelta: e.movementX,
-        yDelta: e.movementY,
-        points: graphDetailRef.current,
-      });
+      graph.current.moveGraph(e.movementX, e.movementY);
     });
+
     canvas.current.addEventListener('wheel', (e: WheelEvent) => {
       if (!graph.current) return;
-      let zoomDelta = 0;
       if (e.deltaY < 0) {
-        if (graph.current.squareSize + ZOOM_STEP > MAX_ZOOM.MAX) return;
-        zoomDelta = ZOOM_STEP;
+        zoomIn();
       } else {
-        if (graph.current.squareSize - ZOOM_STEP < MAX_ZOOM.MIN) return;
-        zoomDelta = -ZOOM_STEP;
+        zoomOut();
       }
-      graph.current.transformGraph({
-        xDelta: 0,
-        yDelta: 0,
-        zoomDelta: zoomDelta,
-        points: graphDetailRef.current,
-      });
     });
+    return () => {
+      if (!graph.current) return;
+      graph.current.clearGraph();
+    };
   }, []);
 
   useEffect(() => {
     if (!graph.current) return;
     graph.current.clearGraph();
+    graph.current.pointsPerSquare = graphDetail;
     for (const { expression, color } of graphInputs) {
-      graph.current.drawGraph(expression, color, graphDetail);
+      graph.current.drawGraph(expression, color);
     }
 
     if (graphInputs.filter((graph) => graph.expression === '').length > 0) {
@@ -118,6 +123,7 @@ const Canvas: React.FC<CanvasProps> = () => {
   };
 
   // TODO: store graph data in URL
+  // TODO: zoom relatively to the cursor (now it is relative to the 0,0 coordinates)
   return (
     <div>
       <div
@@ -130,7 +136,6 @@ const Canvas: React.FC<CanvasProps> = () => {
         className="toolbox"
         style={{ visibility: toolboxOpen ? 'visible' : 'hidden' }}
       >
-        {/* <h1>Graph-cal</h1> */}
         {graphInputs.map((graphInput, idx) => (
           <div className="graph-input" key={idx}>
             <div
@@ -175,20 +180,46 @@ const Canvas: React.FC<CanvasProps> = () => {
           <div>
             <b>Options:</b>
           </div>
-          <div>
-            <label>detail: </label>
-            <input
-              type="range"
-              min={1}
-              max={20}
-              value={graphDetail}
-              onChange={(e) => setGraphDetail(parseInt(e.target.value))}
-            />
-            {graphDetail}
-          </div>
+          <table className="options-table">
+            <tbody>
+              <tr>
+                <td>detail:</td>
+                <td>
+                  <input
+                    type="range"
+                    min={1}
+                    max={20}
+                    value={graphDetail}
+                    onChange={(e) => setGraphDetail(parseInt(e.target.value))}
+                  />
+                  <b>{graphDetail}</b>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
       <canvas id="graph" ref={canvas}></canvas>;
+      <div className="toolbar">
+        <div className="toolbar-item">
+          <FaHome
+            onClick={() => {
+              if (!graph.current || !canvas.current) return;
+              graph.current.moveGraphAbsolute(
+                canvas.current.width / 2,
+                canvas.current.height / 2
+              );
+              graph.current.resetZoom();
+            }}
+          />
+        </div>
+        <div className="toolbar-item">
+          <AiOutlineZoomIn onClick={zoomIn} />
+        </div>
+        <div className="toolbar-item">
+          <AiOutlineZoomOut onClick={zoomOut} />
+        </div>
+      </div>
     </div>
   );
 };

@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
-import { Graph } from '../graph';
-import { getObjectFitSize } from '../utils/getObjectFitSize';
+import { useEffect, useRef, useState } from "react";
+import { Graph } from "../graph";
+import { getObjectFitSize } from "../utils/getObjectFitSize";
+import { randomRGBColor } from "../utils/random";
+import { FaTrashAlt } from "react-icons/fa";
 export interface CanvasProps {}
 
 interface GraphInput {
@@ -9,9 +11,15 @@ interface GraphInput {
 }
 const Canvas: React.FC<CanvasProps> = () => {
   const canvas = useRef<HTMLCanvasElement>(null);
-  const [currentExpression, setCurrentExpression] = useState<string>('');
+  const [currentExpression, setCurrentExpression] = useState<string>("");
   const graph = useRef<Graph>();
-  const [graphInputs, setGraphInputs] = useState<GraphInput[]>([]);
+  const [graphInputs, setGraphInputs] = useState<GraphInput[]>([
+    { expression: "x", color: "#f00" },
+    { expression: "", color: "#00f" },
+  ]);
+  const graphInputsRef = useRef<GraphInput[]>(graphInputs);
+  graphInputsRef.current = graphInputs;
+
   useEffect(() => {
     if (!canvas.current) return;
     const dimensions = getObjectFitSize(
@@ -29,25 +37,25 @@ const Canvas: React.FC<CanvasProps> = () => {
     graph.current.initialize();
 
     let dragging = false;
-    canvas.current.addEventListener('mousedown', (e) => {
+    canvas.current.addEventListener("mousedown", (e) => {
       dragging = true;
     });
 
     const stopDrag = () => {
       dragging = false;
-      canvas.current?.classList.remove('dragging');
+      canvas.current?.classList.remove("dragging");
     };
-    canvas.current.addEventListener('mouseup', stopDrag);
-    canvas.current.addEventListener('mouseleave', stopDrag);
+    canvas.current.addEventListener("mouseup", stopDrag);
+    canvas.current.addEventListener("mouseleave", stopDrag);
 
-    canvas.current.addEventListener('mousemove', (e) => {
+    canvas.current.addEventListener("mousemove", (e) => {
       if (!dragging || !graph.current) return;
 
-      canvas.current?.classList.add('dragging');
+      canvas.current?.classList.add("dragging");
       graph.current.moveGraph(e.movementX, e.movementY);
     });
-    canvas.current.addEventListener('wheel', () => {
-      console.log('scrolling');
+    canvas.current.addEventListener("wheel", () => {
+      console.log("scrolling");
     });
     //  canvas.current.addEventListener('mousewheel', (e: WheelEvent) => {
     //    // e.preventDefault();
@@ -60,39 +68,58 @@ const Canvas: React.FC<CanvasProps> = () => {
   }, []);
 
   useEffect(() => {
-    if (currentExpression.length === 0 || !graph.current) return;
+    if (!graph.current) return;
     graph.current.clearGraph();
-    graph.current.drawGraph(currentExpression, '#ff0000');
-  }, [currentExpression]);
-
+    for (const input of graphInputs) {
+      graph.current.drawGraph(input.expression, input.color);
+    }
+  }, [graphInputs]);
   const addGraph = () => {
-    setGraphInputs([{ color: '#00ff00', expression: '2*x' }]);
+    console.log("called");
+    const newGraphInput: GraphInput = {
+      color: randomRGBColor(),
+      expression: "",
+    };
+    setGraphInputs([...graphInputsRef.current, newGraphInput]);
   };
   return (
     <div>
       <div className="toolbox">
-        <div className="expression-input">
-          <div className="color-code"></div>
-          <label>f(x) = </label>
-          <input
-            type="text"
-            value={currentExpression}
-            onChange={(e) => setCurrentExpression(e.target.value)}
-          />
-        </div>
-        {graphInputs.map((graphInput) => (
-          <div className="expression-input">
+        {graphInputs.map((graphInput, idx) => (
+          <div className="expression-input" key={idx}>
             <div
               className="color-code"
               style={{ backgroundColor: graphInput.color }}
             ></div>
             <label>f(x) = </label>
-            <input type="text" value={graphInput.expression} />
+            <input
+              type="text"
+              value={graphInput.expression}
+              onChange={(e) => {
+                const updatedGraphInputs = [...graphInputs];
+                const thisGraph = updatedGraphInputs[idx];
+                const newGraphInput: GraphInput = {
+                  color: randomRGBColor(),
+                  expression: "",
+                };
+                updatedGraphInputs[idx] = {
+                  ...thisGraph,
+                  expression: e.target.value,
+                };
+                if (idx === graphInputs.length - 1) {
+                  if (thisGraph.expression === "" && e.target.value !== "") {
+                    updatedGraphInputs.push(newGraphInput);
+                  }
+                }
+
+                setGraphInputs(updatedGraphInputs);
+              }}
+            />
+            <div className="remove">
+              <FaTrashAlt />
+            </div>
           </div>
         ))}
-        <div className="add-graph" onClick={addGraph}>
-          +
-        </div>
       </div>
       <canvas id="graph" ref={canvas}></canvas>;
     </div>

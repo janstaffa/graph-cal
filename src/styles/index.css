@@ -150,3 +150,40 @@ hr {
   border-color: darkgray;
   width: 100%;
 }
+.options-table {
+  width: 100%;
+}
+.options-table tr td {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.toolbar {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 50px;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+}
+
+.toolbar-item {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: white;
+  margin: 5px 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-size: 30px;
+  cursor: pointer;
+}
+
+.toolbar-item:hover {
+  background-color: #ddd;
+}

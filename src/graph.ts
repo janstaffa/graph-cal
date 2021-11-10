@@ -2,8 +2,13 @@ import { Parser } from 'expr-eval';
 
 const SQUARE_BORDER_COLOR = '#000';
 const AXIS_COLOR = '#666';
-const DEFAULT_POINTS_PER_SQUARE = 20;
+export const DEFAULT_POINTS_PER_SQUARE = 20;
+const DEFAULT_SQUARE_SIZE = 42;
 
+export const ZOOM_LIMIT = {
+  MAX: 200,
+  MIN: 10,
+};
 export interface Point {
   x: number;
   y: number;
@@ -15,10 +20,11 @@ export interface GraphFunction {
 }
 export class Graph {
   private ctx: CanvasRenderingContext2D | null = null;
-  private _squareSize: number = 42;
+  private _squareSize: number = DEFAULT_SQUARE_SIZE;
   private center: Point | null = null;
   private quadrons: { width: number; height: number }[] | null = [];
   private graphs: GraphFunction[] = [];
+  pointsPerSquare: number = DEFAULT_POINTS_PER_SQUARE;
 
   get squareSize() {
     return this._squareSize;
@@ -84,32 +90,49 @@ export class Graph {
 
     if (!this.quadrons) return false;
 
+    const exactRatio = DEFAULT_SQUARE_SIZE / this.squareSize;
+    const roundedRatio = Math.round(exactRatio);
+
+    const showDecimals = roundedRatio === 0;
+    let step = roundedRatio;
+    if (showDecimals) {
+      if (exactRatio > 0.25) {
+        step = 0.5;
+      } else {
+        step = 0.25;
+      }
+    }
+    this.ctx.strokeStyle = SQUARE_BORDER_COLOR;
+    this.ctx.lineWidth = 0.5;
     for (const [idx, quadron] of this.quadrons.entries()) {
-      for (let i = 1; i <= quadron.height; i++) {
-        for (let j = 1; j <= quadron.width; j++) {
+      for (let i = 1; i <= quadron.height / step; i++) {
+        for (let j = 1; j <= quadron.width / step; j++) {
           let x = 0,
             y = 0;
           switch (idx) {
             case 0:
-              x = centerX - j * this.squareSize;
-              y = centerY - i * this.squareSize;
+              x = centerX - j * (this.squareSize * step);
+              y = centerY - i * (this.squareSize * step);
               break;
             case 1:
-              x = centerX + (j - 1) * this.squareSize;
-              y = centerY - i * this.squareSize;
+              x = centerX + (j - 1) * (this.squareSize * step);
+              y = centerY - i * (this.squareSize * step);
               break;
             case 2:
-              x = centerX - j * this.squareSize;
-              y = centerY + (i - 1) * this.squareSize;
+              x = centerX - j * (this.squareSize * step);
+              y = centerY + (i - 1) * (this.squareSize * step);
               break;
             case 3:
-              x = centerX + (j - 1) * this.squareSize;
-              y = centerY + (i - 1) * this.squareSize;
+              x = centerX + (j - 1) * (this.squareSize * step);
+              y = centerY + (i - 1) * (this.squareSize * step);
               break;
           }
-          this.ctx.strokeStyle = SQUARE_BORDER_COLOR;
-          this.ctx.lineWidth = 0.5;
-          this.ctx.strokeRect(x, y, this.squareSize, this.squareSize);
+          this.ctx.strokeRect(
+            x,
+            y,
+            this.squareSize * step,
+            this.squareSize * step
+          );
         }
       }
     }
@@ -137,11 +160,34 @@ export class Graph {
 
     this.ctx.font = '12px sans-serif';
     this.ctx.fillStyle = '#999';
-    for (let i = -this.quadrons[0].width; i < this.quadrons[1].width; i++) {
+
+    const exactRatio = DEFAULT_SQUARE_SIZE / this.squareSize;
+    const roundedRatio = Math.round(exactRatio);
+
+    const showDecimals = roundedRatio === 0;
+    let step = 1;
+    if (showDecimals) {
+      if (exactRatio > 0.25) {
+        step = 0.5;
+      } else {
+        step = 0.25;
+      }
+    }
+    for (
+      let i = -this.quadrons[0].width;
+      i < this.quadrons[1].width;
+      i += step
+    ) {
+      if (!showDecimals && Math.abs(i % roundedRatio) !== 0) continue;
       const realPos = this.center.x + i * this.squareSize;
       this.ctx.fillText(i.toString(), realPos + 5, center.y + 15);
     }
-    for (let i = -this.quadrons[3].height; i < this.quadrons[0].height; i++) {
+    for (
+      let i = -this.quadrons[3].height;
+      i < this.quadrons[0].height;
+      i += step
+    ) {
+      if (!showDecimals && Math.abs(i % roundedRatio) !== 0) continue;
       if (i === 0) continue;
       const realPos = this.center.y - i * this.squareSize;
       this.ctx.fillText(i.toString(), center.x + 5, realPos + 15);
@@ -163,7 +209,7 @@ export class Graph {
     return true;
   };
 
-  private getPointsFromExpression = (expression: string, points: number) => {
+  private getPointsFromExpression = (expression: string) => {
     if (!this.quadrons) return null;
     const functionData: Point[] = [];
     const negativeWidth = Math.max(
@@ -175,7 +221,7 @@ export class Graph {
       this.quadrons[3].width
     );
     for (let i = -negativeWidth; i < positiveWidth; i++) {
-      const step = 1 / points;
+      const step = 1 / this.pointsPerSquare;
       for (let j = 0; j < 1; j += step) {
         const x = i + j;
         // f(x) = x
@@ -188,12 +234,8 @@ export class Graph {
     }
     return functionData;
   };
-  drawGraph = (
-    expression: string,
-    color: string,
-    points: number | undefined = DEFAULT_POINTS_PER_SQUARE
-  ) => {
-    const functionData = this.getPointsFromExpression(expression, points);
+  drawGraph = (expression: string, color: string) => {
+    const functionData = this.getPointsFromExpression(expression);
     if (!functionData) return false;
     const newGraph = { expression, data: functionData, color };
     this.graphs.push(newGraph);
@@ -207,32 +249,14 @@ export class Graph {
     this.initialize();
     return true;
   };
-  transformGraph = ({
-    xDelta,
-    yDelta,
-    zoomDelta = 0,
-    points = DEFAULT_POINTS_PER_SQUARE,
-  }: {
-    xDelta: number;
-    yDelta: number;
-    zoomDelta?: number;
-    points?: number;
-  }) => {
-    if (!this.ctx || !this.center) return false;
-    this.center = {
-      x: this.center.x + xDelta,
-      y: this.center.y + yDelta,
-    };
 
-    this._squareSize = this.squareSize + zoomDelta;
+  private rerenderGraph = () => {
+    if (!this.ctx || !this.center) return false;
     this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
     this.drawGrid(this.center);
     this.drawAxis(this.center);
     for (const graph of this.graphs) {
-      const functionData = this.getPointsFromExpression(
-        graph.expression,
-        points
-      );
+      const functionData = this.getPointsFromExpression(graph.expression);
       if (!functionData) return false;
       const updatedGraph: GraphFunction = {
         ...graph,
@@ -240,6 +264,43 @@ export class Graph {
       };
       this.drawGraph_(updatedGraph);
     }
+    return true;
+  };
+  moveGraph = (xDelta: number, yDelta: number) => {
+    if (!this.ctx || !this.center) return false;
+    this.center = {
+      x: this.center.x + xDelta,
+      y: this.center.y + yDelta,
+    };
+
+    this.rerenderGraph();
+    return true;
+  };
+
+  zoomGraph = (zoomDelta: number) => {
+    if (!this.ctx || !this.center) return false;
+    const newSquareSize = this.squareSize + zoomDelta;
+    if (ZOOM_LIMIT.MIN > newSquareSize || newSquareSize > ZOOM_LIMIT.MAX) {
+      return false;
+    }
+
+    this._squareSize = newSquareSize;
+    this.rerenderGraph();
+    return true;
+  };
+
+  moveGraphAbsolute = (x: number, y: number) => {
+    this.center = {
+      x,
+      y,
+    };
+    this.rerenderGraph();
+    return true;
+  };
+
+  resetZoom = () => {
+    this._squareSize = DEFAULT_SQUARE_SIZE;
+    this.rerenderGraph();
     return true;
   };
 }

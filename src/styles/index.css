@@ -1,7 +1,7 @@
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
   background-color: #181818;
   width: 100vw;
@@ -124,6 +124,9 @@ canvas#graph.dragging {
   background-color: lightgray;
   cursor: pointer;
   color: black;
+}
+.remove:hover {
+  background-color: #c0c0c0;
 }
 
 .toolbox-control {

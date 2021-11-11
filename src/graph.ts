@@ -1,7 +1,7 @@
-import { Parser } from 'expr-eval';
+import { Parser } from "expr-eval";
 
-const SQUARE_BORDER_COLOR = '#000';
-const AXIS_COLOR = '#666';
+const SQUARE_BORDER_COLOR = "#000";
+const AXIS_COLOR = "#666";
 export const DEFAULT_POINTS_PER_SQUARE = 20;
 const DEFAULT_SQUARE_SIZE = 42;
 
@@ -25,12 +25,13 @@ export class Graph {
   private quadrons: { width: number; height: number }[] | null = [];
   private graphs: GraphFunction[] = [];
   pointsPerSquare: number = DEFAULT_POINTS_PER_SQUARE;
+  private zoomRatio: number = 1;
 
   get squareSize() {
     return this._squareSize;
   }
   constructor(canvas: HTMLCanvasElement) {
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     ctx?.translate(0.5, 0.5);
     this.ctx = ctx;
   }
@@ -82,7 +83,6 @@ export class Graph {
   };
   private drawGrid = (center: Point) => {
     if (!this.ctx || !center) return false;
-    //  this._squareSize = center.x / this.squaresInQuadron;
 
     const { x: centerX, y: centerY } = center;
 
@@ -92,10 +92,11 @@ export class Graph {
 
     const exactRatio = DEFAULT_SQUARE_SIZE / this.squareSize;
     const roundedRatio = Math.round(exactRatio);
-
+    this.zoomRatio = roundedRatio;
     const showDecimals = roundedRatio === 0;
-    let step = roundedRatio;
+    let step = 1;
     if (showDecimals) {
+      this.zoomRatio = 1;
       if (exactRatio > 0.25) {
         step = 0.5;
       } else {
@@ -103,39 +104,56 @@ export class Graph {
       }
     }
     this.ctx.strokeStyle = SQUARE_BORDER_COLOR;
-    this.ctx.lineWidth = 0.5;
     for (const [idx, quadron] of this.quadrons.entries()) {
-      for (let i = 1; i <= quadron.height / step; i++) {
-        for (let j = 1; j <= quadron.width / step; j++) {
+      for (let i = 1; i <= quadron.height * this.zoomRatio; i++) {
+        for (let j = 1; j <= quadron.width * this.zoomRatio; j++) {
+          this.ctx.lineWidth = 1;
+          if (exactRatio < 0.5) {
+            this.ctx.lineWidth = 2;
+          }
           let x = 0,
             y = 0;
+
+          const multiplier = this.zoomRatio;
           switch (idx) {
             case 0:
-              x = centerX - j * (this.squareSize * step);
-              y = centerY - i * (this.squareSize * step);
+              x = centerX - j * this.squareSize * multiplier;
+              y = centerY - i * this.squareSize * multiplier;
               break;
             case 1:
-              x = centerX + (j - 1) * (this.squareSize * step);
-              y = centerY - i * (this.squareSize * step);
+              x = centerX + (j - 1) * this.squareSize * multiplier;
+              y = centerY - i * this.squareSize * multiplier;
               break;
             case 2:
-              x = centerX - j * (this.squareSize * step);
-              y = centerY + (i - 1) * (this.squareSize * step);
+              x = centerX - j * this.squareSize * multiplier;
+              y = centerY + (i - 1) * this.squareSize * multiplier;
               break;
             case 3:
-              x = centerX + (j - 1) * (this.squareSize * step);
-              y = centerY + (i - 1) * (this.squareSize * step);
+              x = centerX + (j - 1) * this.squareSize * multiplier;
+              y = centerY + (i - 1) * this.squareSize * multiplier;
               break;
           }
           this.ctx.strokeRect(
             x,
             y,
-            this.squareSize * step,
-            this.squareSize * step
+            this.squareSize * multiplier,
+            this.squareSize * multiplier
           );
+          if (exactRatio < 0.5) {
+            for (let k = 0; k < 1; k += step) {
+              this.ctx.lineWidth = 0.5;
+              this.ctx.strokeRect(
+                x + k * this.squareSize,
+                y + k * this.squareSize,
+                this.squareSize,
+                this.squareSize
+              );
+            }
+          }
         }
       }
     }
+
     return true;
   };
   private drawAxis = (center: Point) => {
@@ -158,8 +176,8 @@ export class Graph {
     this.ctx.lineTo(center.x, this.ctx.canvas.height);
     this.ctx.stroke();
 
-    this.ctx.font = '12px sans-serif';
-    this.ctx.fillStyle = '#999';
+    this.ctx.font = "12px sans-serif";
+    this.ctx.fillStyle = "#999";
 
     const exactRatio = DEFAULT_SQUARE_SIZE / this.squareSize;
     const roundedRatio = Math.round(exactRatio);
@@ -210,7 +228,7 @@ export class Graph {
   };
 
   private getPointsFromExpression = (expression: string) => {
-    if (!this.quadrons) return null;
+    if (!this.quadrons || !this.center) return null;
     const functionData: Point[] = [];
     const negativeWidth = Math.max(
       this.quadrons[0].width,
@@ -220,9 +238,10 @@ export class Graph {
       this.quadrons[1].width,
       this.quadrons[3].width
     );
-    for (let i = -negativeWidth; i < positiveWidth; i++) {
-      const step = 1 / this.pointsPerSquare;
-      for (let j = 0; j < 1; j += step) {
+
+    const step = this.zoomRatio / this.pointsPerSquare;
+    for (let i = -negativeWidth; i < positiveWidth; i += this.zoomRatio) {
+      for (let j = 0; j < this.zoomRatio; j += step) {
         const x = i + j;
         // f(x) = x
         try {

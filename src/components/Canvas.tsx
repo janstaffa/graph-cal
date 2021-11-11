@@ -1,15 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
-import { AiOutlineZoomIn, AiOutlineZoomOut } from 'react-icons/ai';
+import { useEffect, useRef, useState } from "react";
+import { AiOutlineZoomIn, AiOutlineZoomOut } from "react-icons/ai";
 import {
   FaChevronLeft,
   FaChevronRight,
   FaHome,
   FaTrashAlt,
-} from 'react-icons/fa';
-import { IoMdAddCircle } from 'react-icons/io';
-import { Graph } from '../graph';
-import { getObjectFitSize } from '../utils/getObjectFitSize';
-import { randomRGBColor } from '../utils/random';
+} from "react-icons/fa";
+import { IoMdAddCircle } from "react-icons/io";
+import { Graph } from "../graph";
+import { getObjectFitSize } from "../utils/getObjectFitSize";
+import { randomRGBColor } from "../utils/random";
 export interface CanvasProps {}
 
 interface GraphInput {
@@ -22,7 +22,7 @@ const Canvas: React.FC<CanvasProps> = () => {
   const canvas = useRef<HTMLCanvasElement>(null);
   const graph = useRef<Graph>();
   const [graphInputs, setGraphInputs] = useState<GraphInput[]>([
-    { expression: 'x', color: randomRGBColor() },
+    { expression: "x", color: randomRGBColor() },
   ]);
   const graphInputsRef = useRef<GraphInput[]>(graphInputs);
   graphInputsRef.current = graphInputs;
@@ -64,23 +64,22 @@ const Canvas: React.FC<CanvasProps> = () => {
     graph.current.initialize();
 
     let dragging = false;
-    canvas.current.addEventListener('mousedown', () => (dragging = true));
+    canvas.current.addEventListener("mousedown", () => (dragging = true));
 
     const stopDrag = () => {
       dragging = false;
-      canvas.current?.classList.remove('dragging');
+      canvas.current?.classList.remove("dragging");
     };
-    canvas.current.addEventListener('mouseup', stopDrag);
-    canvas.current.addEventListener('mouseleave', stopDrag);
+    canvas.current.addEventListener("mouseup", stopDrag);
+    canvas.current.addEventListener("mouseleave", stopDrag);
 
-    canvas.current.addEventListener('mousemove', (e) => {
+    canvas.current.addEventListener("mousemove", (e) => {
       if (!dragging || !graph.current) return;
-
-      canvas.current?.classList.add('dragging');
+      canvas.current?.classList.add("dragging");
       graph.current.moveGraph(e.movementX, e.movementY);
     });
 
-    canvas.current.addEventListener('wheel', (e: WheelEvent) => {
+    canvas.current.addEventListener("wheel", (e: WheelEvent) => {
       if (!graph.current) return;
       if (e.deltaY < 0) {
         zoomIn();
@@ -102,28 +101,29 @@ const Canvas: React.FC<CanvasProps> = () => {
       graph.current.drawGraph(expression, color);
     }
 
-    if (graphInputs.filter((graph) => graph.expression === '').length > 0) {
-      addGraphRef.current?.classList.add('banned');
+    if (graphInputs.filter((graph) => graph.expression === "").length > 0) {
+      addGraphRef.current?.classList.add("banned");
     } else {
-      addGraphRef.current?.classList.remove('banned');
+      addGraphRef.current?.classList.remove("banned");
     }
   }, [graphInputs, graphDetail]);
 
   const addGraph = () => {
     if (
-      graphInputsRef.current.filter((graph) => graph.expression === '').length >
+      graphInputsRef.current.filter((graph) => graph.expression === "").length >
       0
     )
       return;
     const newGraphInput: GraphInput = {
       color: randomRGBColor(),
-      expression: '',
+      expression: "",
     };
     setGraphInputs([...graphInputsRef.current, newGraphInput]);
   };
 
   // TODO: store graph data in URL
   // TODO: zoom relatively to the cursor (now it is relative to the 0,0 coordinates)
+  // TODO: don't calculate y for every x in bigger squares(2*2, 4*4)
   return (
     <div>
       <div
@@ -134,7 +134,7 @@ const Canvas: React.FC<CanvasProps> = () => {
       </div>
       <div
         className="toolbox"
-        style={{ visibility: toolboxOpen ? 'visible' : 'hidden' }}
+        style={{ visibility: toolboxOpen ? "visible" : "hidden" }}
       >
         {graphInputs.map((graphInput, idx) => (
           <div className="graph-input" key={idx}>
@@ -199,7 +199,7 @@ const Canvas: React.FC<CanvasProps> = () => {
           </table>
         </div>
       </div>
-      <canvas id="graph" ref={canvas}></canvas>;
+      <canvas id="graph" ref={canvas}></canvas>
       <div className="toolbar">
         <div className="toolbar-item">
           <FaHome

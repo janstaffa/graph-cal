@@ -1,7 +1,7 @@
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
   background-color: #181818;
   width: 100vw;
@@ -201,7 +201,9 @@ hr {
   position: absolute;
   bottom: 0;
   left: 0;
-  background-color: #ffffffaf;
+  /*  background-color: #ffffffaf;*/
+  color: white;
+
   width: auto;
   height: auto;
   padding: 5px;

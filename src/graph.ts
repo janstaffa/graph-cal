@@ -1,7 +1,7 @@
-import { Parser } from 'expr-eval';
+import { Parser } from "expr-eval";
 
-const SQUARE_BORDER_COLOR = '#000';
-const AXIS_COLOR = '#666';
+const SQUARE_BORDER_COLOR = "#000";
+const AXIS_COLOR = "#666";
 export const DEFAULT_POINTS_PER_SQUARE = 20;
 const DEFAULT_SQUARE_SIZE = 42;
 
@@ -23,7 +23,7 @@ export class Graph {
   private _squareSize: number = DEFAULT_SQUARE_SIZE;
   private center: Point | null = null;
   private quadrons: { width: number; height: number }[] | null = [];
-  private graphs: Pick<GraphFunction, 'expression' | 'color'>[] = [];
+  private graphs: Pick<GraphFunction, "expression" | "color">[] = [];
   pointsPerSquare: number = DEFAULT_POINTS_PER_SQUARE;
   private zoomRatio: number = 1;
 
@@ -31,7 +31,7 @@ export class Graph {
     return this._squareSize;
   }
   constructor(canvas: HTMLCanvasElement) {
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     ctx?.translate(0.5, 0.5);
     this.ctx = ctx;
   }
@@ -173,8 +173,8 @@ export class Graph {
     this.ctx.lineTo(center.x, this.ctx.canvas.height);
     this.ctx.stroke();
 
-    this.ctx.font = '12px sans-serif';
-    this.ctx.fillStyle = '#999';
+    this.ctx.font = "12px sans-serif";
+    this.ctx.fillStyle = "#999";
 
     const exactRatio = DEFAULT_SQUARE_SIZE / this.squareSize;
     const roundedRatio = Math.round(exactRatio);
@@ -222,7 +222,7 @@ export class Graph {
       if (this.quadrons[0].width === 0) {
         x = 5;
       } else if (this.quadrons[1].width === 0) {
-        x = this.ctx.canvas.width - 50 - i.toString().length * 5;
+        x = this.ctx.canvas.width - 15 - i.toString().length * 5;
       }
       if (x) {
         this.ctx.fillText(i.toString(), x, realPos + 15);
@@ -361,7 +361,7 @@ export class Graph {
     return { x: relX, y: relY };
   };
 
-  showFunctionValuesAtX = (x: number): boolean => {
+  showFunctionValuesAtPos = (x: number, y: number): boolean => {
     const relativeCoords = this.getRelativeCoordsFromAbsolute(x, 0);
     if (!relativeCoords || !this.ctx || !this.center) return false;
 
@@ -381,6 +381,7 @@ export class Graph {
     }
 
     this.ctx.fillRect(x, 0, 1, this.ctx.canvas.height);
+    this.ctx.fillRect(0, y, this.ctx.canvas.width, 1);
     return true;
   };
 }

@@ -1,20 +1,19 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 import {
   AiOutlineAim,
   AiOutlineZoomIn,
   AiOutlineZoomOut,
-} from "react-icons/ai";
+} from 'react-icons/ai';
 import {
   FaChevronLeft,
   FaChevronRight,
   FaHome,
   FaTrashAlt,
-} from "react-icons/fa";
-import { IoMdAddCircle } from "react-icons/io";
-import { Expression } from "../expressionCalculator";
-import { Graph } from "../graph";
-import { getObjectFitSize } from "../utils/getObjectFitSize";
-import { randomRGBColor } from "../utils/random";
+} from 'react-icons/fa';
+import { IoMdAddCircle } from 'react-icons/io';
+import { Graph } from '../graph';
+import { getObjectFitSize } from '../utils/getObjectFitSize';
+import { randomRGBColor } from '../utils/random';
 export interface CanvasProps {}
 
 interface GraphInput {
@@ -28,7 +27,7 @@ const Canvas: React.FC<CanvasProps> = () => {
   const canvas = useRef<HTMLCanvasElement>(null);
   const graph = useRef<Graph>();
   const [graphInputs, setGraphInputs] = useState<GraphInput[]>([
-    { expression: "x", color: randomRGBColor(), enabled: true },
+    { expression: 'x', color: randomRGBColor(), enabled: true },
   ]);
   const graphInputsRef = useRef<GraphInput[]>(graphInputs);
   graphInputsRef.current = graphInputs;
@@ -50,23 +49,9 @@ const Canvas: React.FC<CanvasProps> = () => {
   const showValueAtXRef = useRef<boolean>(showValueAtX);
   showValueAtXRef.current = showValueAtX;
 
-  const zoomIn = () => {
-    if (!graph.current) return;
-    const zoomDelta = ZOOM_STEP;
-    graph.current.zoomGraph(zoomDelta);
-  };
-
-  const zoomOut = () => {
-    if (!graph.current) return;
-    const zoomDelta = -ZOOM_STEP;
-    graph.current.zoomGraph(zoomDelta);
-  };
-
   useEffect(() => {
     if (!canvas.current) return;
 
-    const exp = new Expression("abs((-8)/(x*x)) + zw");
-    console.log(exp.calculate({ x: 20, z: 5, w: 6 }));
     const dimensions = getObjectFitSize(
       true,
       canvas.current.clientWidth,
@@ -82,19 +67,19 @@ const Canvas: React.FC<CanvasProps> = () => {
     graph.current.initialize();
 
     let dragging = false;
-    canvas.current.addEventListener("mousedown", () => (dragging = true));
+    canvas.current.addEventListener('mousedown', () => (dragging = true));
 
     const stopDrag = () => {
       dragging = false;
-      canvas.current?.classList.remove("dragging");
+      canvas.current?.classList.remove('dragging');
     };
-    canvas.current.addEventListener("mouseup", stopDrag);
-    canvas.current.addEventListener("mouseleave", stopDrag);
+    canvas.current.addEventListener('mouseup', stopDrag);
+    canvas.current.addEventListener('mouseleave', stopDrag);
 
-    canvas.current.addEventListener("mousemove", (e) => {
+    canvas.current.addEventListener('mousemove', (e) => {
       if (!graph.current) return;
       if (dragging) {
-        canvas.current?.classList.add("dragging");
+        canvas.current?.classList.add('dragging');
         graph.current.moveGraph(e.movementX, e.movementY);
       }
 
@@ -107,13 +92,13 @@ const Canvas: React.FC<CanvasProps> = () => {
       }
     });
 
-    canvas.current.addEventListener("wheel", (e: WheelEvent) => {
+    canvas.current.addEventListener('wheel', (e: WheelEvent) => {
       if (!graph.current) return;
-      if (e.deltaY < 0) {
-        zoomIn();
-      } else {
-        zoomOut();
+      let zoomDelta = ZOOM_STEP;
+      if (e.deltaY > 0) {
+        zoomDelta = -ZOOM_STEP;
       }
+      graph.current.zoomGraph(zoomDelta, { x: e.x, y: e.y });
     });
     return () => {
       if (!graph.current) return;
@@ -130,22 +115,22 @@ const Canvas: React.FC<CanvasProps> = () => {
       graph.current.drawGraph(expression, color);
     }
 
-    if (graphInputs.filter((graph) => graph.expression === "").length > 0) {
-      addGraphRef.current?.classList.add("banned");
+    if (graphInputs.filter((graph) => graph.expression === '').length > 0) {
+      addGraphRef.current?.classList.add('banned');
     } else {
-      addGraphRef.current?.classList.remove("banned");
+      addGraphRef.current?.classList.remove('banned');
     }
   }, [graphInputs, graphDetail]);
 
   const addGraph = () => {
     if (
-      graphInputsRef.current.filter((graph) => graph.expression === "").length >
+      graphInputsRef.current.filter((graph) => graph.expression === '').length >
       0
     )
       return;
     const newGraphInput: GraphInput = {
       color: randomRGBColor(),
-      expression: "",
+      expression: '',
       enabled: true,
     };
     setGraphInputs([...graphInputsRef.current, newGraphInput]);
@@ -163,13 +148,13 @@ const Canvas: React.FC<CanvasProps> = () => {
       </div>
       <div
         className="toolbox"
-        style={{ visibility: toolboxOpen ? "visible" : "hidden" }}
+        style={{ visibility: toolboxOpen ? 'visible' : 'hidden' }}
       >
         {graphInputs.map((graphInput, idx) => (
           <div className="graph-input" key={idx}>
             <div
               className={
-                "color-code" + (!graphInput.enabled ? " disabled" : "")
+                'color-code' + (!graphInput.enabled ? ' disabled' : '')
               }
               style={{ backgroundColor: graphInput.color }}
               onClick={() => {
@@ -248,7 +233,7 @@ const Canvas: React.FC<CanvasProps> = () => {
       </div>
       <div className="toolbar">
         <div
-          className={"toolbar-item" + (!showValueAtX ? " disabled" : "")}
+          className={'toolbar-item' + (!showValueAtX ? ' disabled' : '')}
           onClick={() => {
             if (showValueAtXRef) {
               graph.current?.rerenderGraph();
@@ -271,10 +256,28 @@ const Canvas: React.FC<CanvasProps> = () => {
         >
           <FaHome />
         </div>
-        <div className="toolbar-item" onClick={zoomIn}>
+        <div
+          className="toolbar-item"
+          onClick={() => {
+            if (!canvas.current) return;
+            graph.current?.zoomGraph(ZOOM_STEP, {
+              x: canvas.current.width / 2,
+              y: canvas.current.height / 2,
+            });
+          }}
+        >
           <AiOutlineZoomIn />
         </div>
-        <div className="toolbar-item" onClick={zoomOut}>
+        <div
+          className="toolbar-item"
+          onClick={() => {
+            if (!canvas.current) return;
+            graph.current?.zoomGraph(-ZOOM_STEP, {
+              x: canvas.current.width / 2,
+              y: canvas.current.height || 0 / 2,
+            });
+          }}
+        >
           <AiOutlineZoomOut />
         </div>
       </div>

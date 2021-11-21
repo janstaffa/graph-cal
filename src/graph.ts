@@ -1,7 +1,9 @@
-import { Parser } from "expr-eval";
+// import { Parser } from 'expr-eval';
 
-const SQUARE_BORDER_COLOR = "#000";
-const AXIS_COLOR = "#666";
+import Parser from 'expression-parser';
+
+const SQUARE_BORDER_COLOR = '#000';
+const AXIS_COLOR = '#666';
 export const DEFAULT_POINTS_PER_SQUARE = 20;
 const DEFAULT_SQUARE_SIZE = 42;
 
@@ -23,7 +25,7 @@ export class Graph {
   private _squareSize: number = DEFAULT_SQUARE_SIZE;
   private center: Point | null = null;
   private quadrons: { width: number; height: number }[] | null = [];
-  private graphs: Pick<GraphFunction, "expression" | "color">[] = [];
+  private graphs: Pick<GraphFunction, 'expression' | 'color'>[] = [];
   pointsPerSquare: number = DEFAULT_POINTS_PER_SQUARE;
   private zoomRatio: number = 1;
 
@@ -31,7 +33,7 @@ export class Graph {
     return this._squareSize;
   }
   constructor(canvas: HTMLCanvasElement) {
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext('2d');
     ctx?.translate(0.5, 0.5);
     this.ctx = ctx;
   }
@@ -48,9 +50,9 @@ export class Graph {
     return true;
   };
 
-  private calculateQuadrons = () => {
-    if (!this.ctx || !this.center) return null;
-    const { x: centerX, y: centerY } = this.center;
+  private calculateQuadrons = (center: Point) => {
+    if (!this.ctx || !center) return null;
+    const { x: centerX, y: centerY } = center;
     const { width: canvasWidth, height: canvasHeight } = this.ctx.canvas;
 
     const quadronWidths = {
@@ -86,7 +88,7 @@ export class Graph {
 
     const { x: centerX, y: centerY } = center;
 
-    this.quadrons = this.calculateQuadrons();
+    this.quadrons = this.calculateQuadrons(center);
 
     if (!this.quadrons) return false;
 
@@ -154,9 +156,9 @@ export class Graph {
     return true;
   };
   private drawAxis = (center: Point) => {
-    if (!this.ctx || !this.center) return false;
+    if (!this.ctx || !center) return false;
     if (!this.quadrons) {
-      this.quadrons = this.calculateQuadrons();
+      this.quadrons = this.calculateQuadrons(center);
       if (!this.quadrons) return false;
     }
     this.ctx.strokeStyle = AXIS_COLOR;
@@ -173,8 +175,8 @@ export class Graph {
     this.ctx.lineTo(center.x, this.ctx.canvas.height);
     this.ctx.stroke();
 
-    this.ctx.font = "12px sans-serif";
-    this.ctx.fillStyle = "#999";
+    this.ctx.font = '12px sans-serif';
+    this.ctx.fillStyle = '#999';
 
     const exactRatio = DEFAULT_SQUARE_SIZE / this.squareSize;
     const roundedRatio = Math.round(exactRatio);
@@ -195,7 +197,7 @@ export class Graph {
       i += step
     ) {
       if (!showDecimals && Math.abs(i % roundedRatio) !== 0) continue;
-      const realPos = this.center.x + i * this.squareSize;
+      const realPos = center.x + i * this.squareSize;
 
       let y;
       if (this.quadrons[0].height === 0) {
@@ -216,13 +218,13 @@ export class Graph {
     ) {
       if (!showDecimals && Math.abs(i % roundedRatio) !== 0) continue;
       if (i === 0) continue;
-      const realPos = this.center.y - i * this.squareSize;
+      const realPos = center.y - i * this.squareSize;
 
       let x;
       if (this.quadrons[0].width === 0) {
         x = 5;
       } else if (this.quadrons[1].width === 0) {
-        x = this.ctx.canvas.width - 15 - i.toString().length * 5;
+        x = this.ctx.canvas.width - 40 - i.toString().length * 5;
       }
       if (x) {
         this.ctx.fillText(i.toString(), x, realPos + 15);
@@ -232,15 +234,18 @@ export class Graph {
     }
     return true;
   };
-  private drawGraph_ = (graph: GraphFunction) => {
-    if (!this.ctx || !this.center) return false;
+  private drawGraph_ = (
+    graph: GraphFunction,
+    center: (Point | null) | undefined = this.center
+  ) => {
+    if (!this.ctx || !center) return false;
     const { data, color } = graph;
     this.ctx.strokeStyle = color;
     this.ctx.lineWidth = 3;
     this.ctx.beginPath();
     for (const point of data) {
-      const x = this.center.x + point.x * this.squareSize;
-      const y = this.center.y + point.y * this.squareSize;
+      const x = center.x + point.x * this.squareSize;
+      const y = center.y + point.y * this.squareSize;
       this.ctx.lineTo(x, y);
     }
     this.ctx.stroke();
@@ -249,7 +254,11 @@ export class Graph {
 
   private solveExpressionForX = (expression: string, x: number) => {
     try {
-      const y = Parser.evaluate(expression, { x });
+      const y = Parser.evaluate(
+        expression.toLowerCase(),
+        { x },
+        { useRadians: true }
+      );
       return y;
     } catch (e) {}
     return null;
@@ -271,7 +280,13 @@ export class Graph {
       for (let j = 0; j < this.zoomRatio; j += step) {
         const x = i + j;
         const y = this.solveExpressionForX(expression, x);
-        if (!y) continue;
+        if (
+          !y ||
+          Number.isNaN(y) ||
+          y > this.quadrons[0].height * this.squareSize ||
+          y < -this.quadrons[2].height * this.squareSize
+        )
+          continue;
         // y: -y to invert x axis
         functionData.push({ x, y: -y });
       }
@@ -294,11 +309,11 @@ export class Graph {
     return true;
   };
 
-  rerenderGraph = () => {
-    if (!this.ctx || !this.center) return false;
+  rerenderGraph = (center: (Point | null) | undefined = this.center) => {
+    if (!this.ctx || !center) return false;
     this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-    this.drawGrid(this.center);
-    this.drawAxis(this.center);
+    this.drawGrid(center);
+    this.drawAxis(center);
     for (const graph of this.graphs) {
       const functionData = this.getPointsFromExpression(graph.expression);
       if (!functionData) return false;
@@ -321,15 +336,26 @@ export class Graph {
     return true;
   };
 
-  zoomGraph = (zoomDelta: number) => {
-    if (!this.ctx || !this.center) return false;
+  zoomGraph = (
+    zoomDelta: number,
+    center: (Point | null) | undefined = this.center
+  ) => {
+    if (!this.ctx || !center || !this.center) return false;
+
     const newSquareSize = this.squareSize + zoomDelta;
     if (ZOOM_LIMIT.MIN > newSquareSize || newSquareSize > ZOOM_LIMIT.MAX) {
       return false;
     }
+    const deltaX = center.x - this.center.x;
+    const deltaY = center.y - this.center.y;
+    const squaresX = deltaX / this.squareSize;
+    const squaresY = deltaY / this.squareSize;
+    const differenceX = deltaX - squaresX * newSquareSize;
+    const differenceY = deltaY - squaresY * newSquareSize;
 
     this._squareSize = newSquareSize;
-    this.rerenderGraph();
+    //  this.rerenderGraph();
+    this.moveGraph(differenceX, differenceY);
     return true;
   };
 

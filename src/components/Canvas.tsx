@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { AiOutlineZoomIn, AiOutlineZoomOut } from 'react-icons/ai';
+import {
+  AiOutlineAim,
+  AiOutlineZoomIn,
+  AiOutlineZoomOut,
+} from 'react-icons/ai';
 import {
   FaChevronLeft,
   FaChevronRight,
@@ -15,6 +19,7 @@ export interface CanvasProps {}
 interface GraphInput {
   expression: string;
   color: string;
+  enabled: boolean;
 }
 
 const ZOOM_STEP = 5;
@@ -22,7 +27,7 @@ const Canvas: React.FC<CanvasProps> = () => {
   const canvas = useRef<HTMLCanvasElement>(null);
   const graph = useRef<Graph>();
   const [graphInputs, setGraphInputs] = useState<GraphInput[]>([
-    { expression: 'x', color: randomRGBColor() },
+    { expression: 'x', color: randomRGBColor(), enabled: true },
   ]);
   const graphInputsRef = useRef<GraphInput[]>(graphInputs);
   graphInputsRef.current = graphInputs;
@@ -35,20 +40,18 @@ const Canvas: React.FC<CanvasProps> = () => {
   const graphDetailRef = useRef<number>(graphDetail);
   graphDetailRef.current = graphDetail;
 
-  const zoomIn = () => {
-    if (!graph.current) return;
-    const zoomDelta = ZOOM_STEP;
-    graph.current.zoomGraph(zoomDelta);
-  };
+  const [relativeCoords, setRelativeCoords] = useState<{
+    x: number;
+    y: number;
+  }>({ x: 0, y: 0 });
 
-  const zoomOut = () => {
-    if (!graph.current) return;
-    const zoomDelta = -ZOOM_STEP;
-    graph.current.zoomGraph(zoomDelta);
-  };
+  const [showValueAtX, setShowValueAtX] = useState<boolean>(false);
+  const showValueAtXRef = useRef<boolean>(showValueAtX);
+  showValueAtXRef.current = showValueAtX;
 
   useEffect(() => {
     if (!canvas.current) return;
+
     const dimensions = getObjectFitSize(
       true,
       canvas.current.clientWidth,
@@ -74,19 +77,28 @@ const Canvas: React.FC<CanvasProps> = () => {
     canvas.current.addEventListener('mouseleave', stopDrag);
 
     canvas.current.addEventListener('mousemove', (e) => {
-      if (!dragging || !graph.current) return;
+      if (!graph.current) return;
+      if (dragging) {
+        canvas.current?.classList.add('dragging');
+        graph.current.moveGraph(e.movementX, e.movementY);
+      }
 
-      canvas.current?.classList.add('dragging');
-      graph.current.moveGraph(e.movementX, e.movementY);
+      const relCoords = graph.current.getRelativeCoordsFromAbsolute(e.x, e.y);
+      if (!relCoords) return;
+
+      setRelativeCoords(relCoords);
+      if (showValueAtXRef.current) {
+        graph.current.showFunctionValuesAtPos(e.x, e.y);
+      }
     });
 
     canvas.current.addEventListener('wheel', (e: WheelEvent) => {
       if (!graph.current) return;
-      if (e.deltaY < 0) {
-        zoomIn();
-      } else {
-        zoomOut();
+      let zoomDelta = ZOOM_STEP;
+      if (e.deltaY > 0) {
+        zoomDelta = -ZOOM_STEP;
       }
+      graph.current.zoomGraph(zoomDelta, { x: e.x, y: e.y });
     });
     return () => {
       if (!graph.current) return;
@@ -98,7 +110,8 @@ const Canvas: React.FC<CanvasProps> = () => {
     if (!graph.current) return;
     graph.current.clearGraph();
     graph.current.pointsPerSquare = graphDetail;
-    for (const { expression, color } of graphInputs) {
+    for (const { expression, color, enabled } of graphInputs) {
+      if (!enabled) continue;
       graph.current.drawGraph(expression, color);
     }
 
@@ -118,6 +131,7 @@ const Canvas: React.FC<CanvasProps> = () => {
     const newGraphInput: GraphInput = {
       color: randomRGBColor(),
       expression: '',
+      enabled: true,
     };
     setGraphInputs([...graphInputsRef.current, newGraphInput]);
   };
@@ -139,10 +153,20 @@ const Canvas: React.FC<CanvasProps> = () => {
         {graphInputs.map((graphInput, idx) => (
           <div className="graph-input" key={idx}>
             <div
-              className="color-code"
+              className={
+                'color-code' + (!graphInput.enabled ? ' disabled' : '')
+              }
               style={{ backgroundColor: graphInput.color }}
+              onClick={() => {
+                const updatedGraphInputs = [...graphInputs];
+                updatedGraphInputs[idx] = {
+                  ...graphInput,
+                  enabled: !graphInput.enabled,
+                };
+                setGraphInputs(updatedGraphInputs);
+              }}
             ></div>
-            <div className="graph-info">
+            <div className="function-info">
               <span>f(x)</span> =
             </div>
             <input
@@ -150,9 +174,8 @@ const Canvas: React.FC<CanvasProps> = () => {
               value={graphInput.expression}
               onChange={(e) => {
                 const updatedGraphInputs = [...graphInputs];
-                const thisGraph = updatedGraphInputs[idx];
                 updatedGraphInputs[idx] = {
-                  ...thisGraph,
+                  ...graphInput,
                   expression: e.target.value,
                 };
 
@@ -199,25 +222,63 @@ const Canvas: React.FC<CanvasProps> = () => {
           </table>
         </div>
       </div>
-      <canvas id="graph" ref={canvas}></canvas>;
+      <canvas id="graph" ref={canvas}></canvas>
+      <div className="graph-info">
+        <div className="relative-wrap">
+          X: <div className="relative-value">{relativeCoords.x.toFixed(2)}</div>
+        </div>
+        <div className="relative-wrap">
+          Y: <div className="relative-value">{relativeCoords.y.toFixed(2)}</div>
+        </div>
+      </div>
       <div className="toolbar">
-        <div className="toolbar-item">
-          <FaHome
-            onClick={() => {
-              if (!graph.current || !canvas.current) return;
-              graph.current.moveGraphAbsolute(
-                canvas.current.width / 2,
-                canvas.current.height / 2
-              );
-              graph.current.resetZoom();
-            }}
-          />
+        <div
+          className={'toolbar-item' + (!showValueAtX ? ' disabled' : '')}
+          onClick={() => {
+            if (showValueAtXRef) {
+              graph.current?.rerenderGraph();
+            }
+            setShowValueAtX(!showValueAtX);
+          }}
+        >
+          <AiOutlineAim />
         </div>
-        <div className="toolbar-item">
-          <AiOutlineZoomIn onClick={zoomIn} />
+        <div
+          className="toolbar-item"
+          onClick={() => {
+            if (!graph.current || !canvas.current) return;
+            graph.current.moveGraphAbsolute(
+              canvas.current.width / 2,
+              canvas.current.height / 2
+            );
+            graph.current.resetZoom();
+          }}
+        >
+          <FaHome />
         </div>
-        <div className="toolbar-item">
-          <AiOutlineZoomOut onClick={zoomOut} />
+        <div
+          className="toolbar-item"
+          onClick={() => {
+            if (!canvas.current) return;
+            graph.current?.zoomGraph(ZOOM_STEP, {
+              x: canvas.current.width / 2,
+              y: canvas.current.height / 2,
+            });
+          }}
+        >
+          <AiOutlineZoomIn />
+        </div>
+        <div
+          className="toolbar-item"
+          onClick={() => {
+            if (!canvas.current) return;
+            graph.current?.zoomGraph(-ZOOM_STEP, {
+              x: canvas.current.width / 2,
+              y: canvas.current.height || 0 / 2,
+            });
+          }}
+        >
+          <AiOutlineZoomOut />
         </div>
       </div>
     </div>

@@ -9,5 +9,4 @@ ReactDOM.render(
   document.getElementById('root')
 );
 
-// TODO: store graph data in URL
 // TODO: in mod function break the graph line where it shouldnt be

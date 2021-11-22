@@ -51,7 +51,7 @@ const GraphItem: React.FC<GraphInputProps> = ({
               x∈
               <input
                 type="text"
-                placeholder="(0; 10>"
+                placeholder="(0; Infinity>"
                 value={graph.interval}
                 onChange={(e) => {
                   updateGraph({ ...graph, interval: e.target.value });

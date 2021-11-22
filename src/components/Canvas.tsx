@@ -21,6 +21,7 @@ export interface GraphInput {
 }
 
 const ZOOM_STEP = 5;
+
 const Canvas: React.FC<CanvasProps> = () => {
   const canvas = useRef<HTMLCanvasElement>(null);
   const graph = useRef<Graph>();
@@ -81,12 +82,11 @@ const Canvas: React.FC<CanvasProps> = () => {
     canvas.current.addEventListener('mouseleave', stopDrag);
 
     canvas.current.addEventListener('mousemove', (e) => {
-      if (!graph.current) return;
+      if (!graph.current || !canvas.current) return;
       if (dragging) {
         canvas.current?.classList.add('dragging');
         graph.current.moveGraph(e.movementX, e.movementY);
       }
-
       const relCoords = graph.current.getRelativeCoordsFromAbsolute(e.x, e.y);
       if (!relCoords) return;
 

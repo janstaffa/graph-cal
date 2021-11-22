@@ -4868,7 +4868,7 @@ express@^4.17.1:
 
 expression-parser@janstaffa/expression-parser:
   version "1.0.0"
-  resolved "https://codeload.github.com/janstaffa/expression-parser/tar.gz/a0595dce804fb89b03dc9dd41e9b90f5b2512734"
+  resolved "https://codeload.github.com/janstaffa/expression-parser/tar.gz/ad47d7b97389647753e0118e64ae9fa041dc2eca"
 
 ext@^1.1.2:
   version "1.4.0"

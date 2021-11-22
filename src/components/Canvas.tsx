@@ -4,22 +4,20 @@ import {
   AiOutlineZoomIn,
   AiOutlineZoomOut,
 } from 'react-icons/ai';
-import {
-  FaChevronLeft,
-  FaChevronRight,
-  FaHome,
-  FaTrashAlt,
-} from 'react-icons/fa';
+import { FaChevronLeft, FaChevronRight, FaHome } from 'react-icons/fa';
 import { IoMdAddCircle } from 'react-icons/io';
 import { Graph } from '../graph';
 import { getObjectFitSize } from '../utils/getObjectFitSize';
 import { randomRGBColor } from '../utils/random';
+import GraphList from './GraphList';
 export interface CanvasProps {}
 
-interface GraphInput {
+export interface GraphInput {
+  id: number;
   expression: string;
   color: string;
   enabled: boolean;
+  interval: string;
 }
 
 const ZOOM_STEP = 5;
@@ -27,7 +25,13 @@ const Canvas: React.FC<CanvasProps> = () => {
   const canvas = useRef<HTMLCanvasElement>(null);
   const graph = useRef<Graph>();
   const [graphInputs, setGraphInputs] = useState<GraphInput[]>([
-    { expression: 'x', color: randomRGBColor(), enabled: true },
+    {
+      id: 1,
+      expression: 'x',
+      color: randomRGBColor(),
+      enabled: true,
+      interval: 'R',
+    },
   ]);
   const graphInputsRef = useRef<GraphInput[]>(graphInputs);
   graphInputsRef.current = graphInputs;
@@ -110,9 +114,9 @@ const Canvas: React.FC<CanvasProps> = () => {
     if (!graph.current) return;
     graph.current.clearGraph();
     graph.current.pointsPerSquare = graphDetail;
-    for (const { expression, color, enabled } of graphInputs) {
+    for (const { expression, color, enabled, interval } of graphInputs) {
       if (!enabled) continue;
-      graph.current.drawGraph(expression, color);
+      graph.current.drawGraph(expression, color, interval);
     }
 
     if (graphInputs.filter((graph) => graph.expression === '').length > 0) {
@@ -128,16 +132,19 @@ const Canvas: React.FC<CanvasProps> = () => {
       0
     )
       return;
+    const lastGraph = graphInputsRef.current[graphInputsRef.current.length - 1];
+
+    const newId = lastGraph ? lastGraph.id + 1 : 1;
     const newGraphInput: GraphInput = {
+      id: newId,
       color: randomRGBColor(),
       expression: '',
       enabled: true,
+      interval: 'R',
     };
     setGraphInputs([...graphInputsRef.current, newGraphInput]);
   };
 
-  // TODO: store graph data in URL
-  // TODO: zoom relatively to the cursor (now it is relative to the 0,0 coordinates)
   return (
     <div>
       <div
@@ -150,51 +157,7 @@ const Canvas: React.FC<CanvasProps> = () => {
         className="toolbox"
         style={{ visibility: toolboxOpen ? 'visible' : 'hidden' }}
       >
-        {graphInputs.map((graphInput, idx) => (
-          <div className="graph-input" key={idx}>
-            <div
-              className={
-                'color-code' + (!graphInput.enabled ? ' disabled' : '')
-              }
-              style={{ backgroundColor: graphInput.color }}
-              onClick={() => {
-                const updatedGraphInputs = [...graphInputs];
-                updatedGraphInputs[idx] = {
-                  ...graphInput,
-                  enabled: !graphInput.enabled,
-                };
-                setGraphInputs(updatedGraphInputs);
-              }}
-            ></div>
-            <div className="function-info">
-              <span>f(x)</span> =
-            </div>
-            <input
-              type="text"
-              value={graphInput.expression}
-              onChange={(e) => {
-                const updatedGraphInputs = [...graphInputs];
-                updatedGraphInputs[idx] = {
-                  ...graphInput,
-                  expression: e.target.value,
-                };
-
-                setGraphInputs(updatedGraphInputs);
-              }}
-            />
-            <div
-              className="remove"
-              onClick={() => {
-                const updatedGraphInputs = [...graphInputs];
-                updatedGraphInputs.splice(idx, 1);
-
-                setGraphInputs(updatedGraphInputs);
-              }}
-            >
-              <FaTrashAlt />
-            </div>
-          </div>
-        ))}
+        <GraphList graphs={graphInputs} setGraphInputs={setGraphInputs} />
         <div className="add-graph" onClick={addGraph} ref={addGraphRef}>
           <IoMdAddCircle />
         </div>
@@ -274,7 +237,7 @@ const Canvas: React.FC<CanvasProps> = () => {
             if (!canvas.current) return;
             graph.current?.zoomGraph(-ZOOM_STEP, {
               x: canvas.current.width / 2,
-              y: canvas.current.height || 0 / 2,
+              y: canvas.current.height / 2,
             });
           }}
         >

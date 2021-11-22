@@ -1,7 +1,7 @@
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   background-color: #181818;
   width: 100vw;
@@ -222,4 +222,38 @@ hr {
 .graph-info .relative-value {
   text-align: right;
   width: 50px;
+}
+.function-name {
+  font-size: 15px;
+}
+.function-input-wrap {
+  position: relative;
+}
+.function-interval {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: auto;
+  background-color: white;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  border: 1px solid gray;
+  padding: 0 5px;
+  box-sizing: border-box;
+  border-radius: 3px;
+}
+.function-interval input {
+  width: 120px;
+  font-size: 16px;
+}
+.function-interval-toggle {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
 }

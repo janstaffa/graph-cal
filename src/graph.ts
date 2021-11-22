@@ -19,13 +19,15 @@ export interface GraphFunction {
   expression: string;
   data: Point[];
   color: string;
+  interval: string;
 }
 export class Graph {
   private ctx: CanvasRenderingContext2D | null = null;
   private _squareSize: number = DEFAULT_SQUARE_SIZE;
   private center: Point | null = null;
   private quadrons: { width: number; height: number }[] | null = [];
-  private graphs: Pick<GraphFunction, 'expression' | 'color'>[] = [];
+  private graphs: Pick<GraphFunction, 'expression' | 'color' | 'interval'>[] =
+    [];
   pointsPerSquare: number = DEFAULT_POINTS_PER_SQUARE;
   private zoomRatio: number = 1;
 
@@ -40,10 +42,12 @@ export class Graph {
 
   initialize = () => {
     if (!this.ctx) return false;
-    this.center = {
-      x: this.ctx.canvas.width / 2,
-      y: this.ctx.canvas.height / 2,
-    };
+    if (!this.center) {
+      this.center = {
+        x: this.ctx.canvas.width / 2,
+        y: this.ctx.canvas.height / 2,
+      };
+    }
 
     this.drawGrid(this.center);
     this.drawAxis(this.center);
@@ -234,18 +238,15 @@ export class Graph {
     }
     return true;
   };
-  private drawGraph_ = (
-    graph: GraphFunction,
-    center: (Point | null) | undefined = this.center
-  ) => {
-    if (!this.ctx || !center) return false;
+  private drawGraph_ = (graph: GraphFunction) => {
+    if (!this.ctx || !this.center) return false;
     const { data, color } = graph;
     this.ctx.strokeStyle = color;
     this.ctx.lineWidth = 3;
     this.ctx.beginPath();
     for (const point of data) {
-      const x = center.x + point.x * this.squareSize;
-      const y = center.y + point.y * this.squareSize;
+      const x = this.center.x + point.x * this.squareSize;
+      const y = this.center.y + point.y * this.squareSize;
       this.ctx.lineTo(x, y);
     }
     this.ctx.stroke();
@@ -260,10 +261,49 @@ export class Graph {
         { useRadians: true }
       );
       return y;
-    } catch (e) {}
+    } catch (e) {
+      // console.error(e);
+    }
     return null;
   };
-  private getPointsFromExpression = (expression: string) => {
+
+  private isInInterval = (number: number, interval: string) => {
+    interval = interval.replace(/\s+/g, '');
+    switch (interval) {
+      // real numbers
+      case 'R':
+        return true;
+      // integers
+      case 'Z':
+        return Number.isInteger(number);
+      // natural numbers x > 0
+      case 'N':
+        return number > 0;
+      // whole numbers x >= 0
+      case 'W':
+        return number >= 0;
+      default: {
+        if (interval.length > 0) {
+          const firstChar = interval[0];
+          const lastChar = interval[interval.length - 1];
+          const inside = interval.slice(1, interval.length - 1).split(';');
+          if (inside.length !== 2) return false;
+          const intervalStart = parseFloat(inside[0]);
+          const intervalEnd = parseFloat(inside[1]);
+
+          if (firstChar === '(') {
+            if (number === intervalStart) return false;
+          }
+          if (lastChar === ')') {
+            if (number === intervalEnd) return false;
+          }
+          if (intervalStart <= number && number <= intervalEnd) return true;
+          return false;
+        }
+      }
+    }
+  };
+  private getPointsFromExpression = (expression: string, interval: string) => {
     if (!this.quadrons || !this.center) return null;
     const functionData: Point[] = [];
     const negativeWidth = Math.max(
@@ -279,9 +319,16 @@ export class Graph {
     for (let i = -negativeWidth; i < positiveWidth; i += this.zoomRatio) {
       for (let j = 0; j < this.zoomRatio; j += step) {
         const x = i + j;
+        if (!this.isInInterval(x, interval)) continue;
+        //   this.ctx?.fillRect(
+        //     x * this.squareSize + positiveWidth * this.squareSize,
+        //     500,
+        //     2,
+        //     2
+        //   );
         const y = this.solveExpressionForX(expression, x);
         if (
-          !y ||
+          typeof y !== 'number' ||
           Number.isNaN(y) ||
           y > this.quadrons[0].height * this.squareSize ||
           y < -this.quadrons[2].height * this.squareSize
@@ -293,11 +340,11 @@ export class Graph {
     }
     return functionData;
   };
-  drawGraph = (expression: string, color: string) => {
-    const functionData = this.getPointsFromExpression(expression);
+  drawGraph = (expression: string, color: string, interval: string) => {
+    const functionData = this.getPointsFromExpression(expression, interval);
     if (!functionData) return false;
-    const newGraph = { expression, data: functionData, color };
-    this.graphs.push({ color, expression });
+    const newGraph = { expression, data: functionData, color, interval };
+    this.graphs.push({ color, expression, interval });
     this.drawGraph_(newGraph);
     return true;
   };
@@ -309,13 +356,16 @@ export class Graph {
     return true;
   };
 
-  rerenderGraph = (center: (Point | null) | undefined = this.center) => {
-    if (!this.ctx || !center) return false;
+  rerenderGraph = () => {
+    if (!this.ctx || !this.center) return false;
     this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-    this.drawGrid(center);
-    this.drawAxis(center);
+    this.drawGrid(this.center);
+    this.drawAxis(this.center);
     for (const graph of this.graphs) {
-      const functionData = this.getPointsFromExpression(graph.expression);
+      const functionData = this.getPointsFromExpression(
+        graph.expression,
+        graph.interval
+      );
       if (!functionData) return false;
       const updatedGraph: GraphFunction = {
         data: functionData,

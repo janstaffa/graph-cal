@@ -28,7 +28,7 @@ const GraphItem: React.FC<GraphInputProps> = ({
         className={'color-code' + (!graph.enabled ? ' disabled' : '')}
         style={{ backgroundColor: graph.color }}
         onClick={() => {
-          updateGraph({ ...graph, enabled: graph.enabled });
+          updateGraph({ ...graph, enabled: !graph.enabled });
         }}
       ></div>
       <div className="function-info">
@@ -44,6 +44,7 @@ const GraphItem: React.FC<GraphInputProps> = ({
           onChange={(e) => {
             updateGraph({ ...graph, expression: e.target.value });
           }}
+          spellCheck={false}
         />
         <div className="function-interval">
           {showIntervalInput && (

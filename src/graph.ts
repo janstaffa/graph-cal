@@ -23,6 +23,7 @@ export interface GraphFunction {
 }
 export class Graph {
   private ctx: CanvasRenderingContext2D | null = null;
+  private graphDimensions: { width: number; height: number } | null = null;
   private _squareSize: number = DEFAULT_SQUARE_SIZE;
   private _center: Point | null = null;
   private quadrons: { width: number; height: number }[] | null = [];
@@ -41,14 +42,19 @@ export class Graph {
     const ctx = canvas.getContext('2d');
     ctx?.translate(0.5, 0.5);
     this.ctx = ctx;
+    const { width, height } = canvas;
+    this.graphDimensions = {
+      width,
+      height,
+    };
   }
 
   initialize = () => {
-    if (!this.ctx) return false;
+    if (!this.ctx || !this.graphDimensions) return false;
     if (!this._center) {
       this._center = {
-        x: this.ctx.canvas.width / 2,
-        y: this.ctx.canvas.height / 2,
+        x: this.graphDimensions.width / 2,
+        y: this.graphDimensions.height / 2,
       };
     }
 
@@ -58,9 +64,9 @@ export class Graph {
   };
 
   private calculateQuadrons = (center: Point) => {
-    if (!this.ctx || !center) return null;
+    if (!this.ctx || !center || !this.graphDimensions) return null;
     const { x: centerX, y: centerY } = center;
-    const { width: canvasWidth, height: canvasHeight } = this.ctx.canvas;
+    const { width: canvasWidth, height: canvasHeight } = this.graphDimensions;
 
     const quadronWidths = {
       positive: Math.ceil((canvasWidth - centerX) / this.squareSize),
@@ -163,7 +169,7 @@ export class Graph {
     return true;
   };
   private drawAxis = (center: Point) => {
-    if (!this.ctx || !center) return false;
+    if (!this.ctx || !center || !this.graphDimensions) return false;
     if (!this.quadrons) {
       this.quadrons = this.calculateQuadrons(center);
       if (!this.quadrons) return false;
@@ -174,12 +180,12 @@ export class Graph {
     this.ctx.beginPath();
     // draw X axis
     this.ctx.moveTo(0, center.y);
-    this.ctx.lineTo(this.ctx.canvas.width, center.y);
+    this.ctx.lineTo(this.graphDimensions.width, center.y);
     this.ctx.stroke();
 
     // draw Y axis
     this.ctx.moveTo(center.x, 0);
-    this.ctx.lineTo(center.x, this.ctx.canvas.height);
+    this.ctx.lineTo(center.x, this.graphDimensions.height);
     this.ctx.stroke();
 
     this.ctx.font = '12px sans-serif';
@@ -210,7 +216,7 @@ export class Graph {
       if (this.quadrons[0].height === 0) {
         y = 20;
       } else if (this.quadrons[2].height === 0) {
-        y = this.ctx.canvas.height - 10;
+        y = this.graphDimensions.height - 10;
       }
       if (y) {
         this.ctx.fillText(i.toString(), realPos + 5, y);
@@ -231,7 +237,7 @@ export class Graph {
       if (this.quadrons[0].width === 0) {
         x = 5;
       } else if (this.quadrons[1].width === 0) {
-        x = this.ctx.canvas.width - 40 - i.toString().length * 5;
+        x = this.graphDimensions.width - 40 - i.toString().length * 5;
       }
       if (x) {
         this.ctx.fillText(i.toString(), x, realPos + 15);
@@ -247,9 +253,31 @@ export class Graph {
     this.ctx.strokeStyle = color;
     this.ctx.lineWidth = 3;
     this.ctx.beginPath();
-    for (const point of data) {
+    for (const [idx, point] of data.entries()) {
       const x = this._center.x + point.x * this.squareSize;
       const y = this._center.y + point.y * this.squareSize;
+
+      // const prevPoint = data[idx - 1];
+      // if (prevPoint) {
+      //   const deltaX = Math.abs(point.x - prevPoint.x);
+      //   const midY = this.solveExpressionForX(
+      //     graph.expression,
+      //     prevPoint.x + deltaX / 2
+      //   );
+      //   if (midY !== null) {
+      //     const absMidY = Math.abs(midY);
+      //     const absPrevPointY = Math.abs(prevPoint.y);
+      //     const absPointY = Math.abs(point.y);
+      //     if (
+      //       (absPrevPointY <= absMidY && absMidY <= absPointY) ||
+      //       (absPrevPointY >= absMidY && absMidY >= absPointY)
+      //     ) {
+      //       this.ctx.lineTo(x, y);
+      //       continue;
+      //     }
+      //   }
+      // }
+      // this.ctx.moveTo(x, y);
       this.ctx.lineTo(x, y);
     }
     this.ctx.stroke();
@@ -271,19 +299,20 @@ export class Graph {
   };
 
   private isInInterval = (number: number, interval: string) => {
+    interval = interval.toLowerCase();
     interval = interval.replace(/\s+/g, '');
     switch (interval) {
       // real numbers
-      case 'R':
+      case 'r':
         return true;
       // integers
-      case 'Z':
+      case 'z':
         return Number.isInteger(number);
       // natural numbers x > 0
-      case 'N':
+      case 'n':
         return number > 0;
       // whole numbers x >= 0
-      case 'W':
+      case 'w':
         return number >= 0;
       default: {
         if (interval.length > 0) {
@@ -320,23 +349,18 @@ export class Graph {
 
     const step = this.zoomRatio / this.pointsPerSquare;
     for (let i = -negativeWidth; i < positiveWidth; i += this.zoomRatio) {
-      for (let j = 0; j < this.zoomRatio; j += step) {
-        const x = i + j;
+      for (let j = 0; j < this.pointsPerSquare; j++) {
+        const x = i + j * step;
         if (!this.isInInterval(x, interval)) continue;
-        //   this.ctx?.fillRect(
-        //     x * this.squareSize + positiveWidth * this.squareSize,
-        //     500,
-        //     2,
-        //     2
-        //   );
         const y = this.solveExpressionForX(expression, x);
         if (
           typeof y !== 'number' ||
           Number.isNaN(y) ||
           y > this.quadrons[0].height * this.squareSize ||
           y < -this.quadrons[2].height * this.squareSize
-        )
+        ) {
           continue;
+        }
         // y: -y to invert x axis
         functionData.push({ x, y: -y });
       }
@@ -352,16 +376,26 @@ export class Graph {
     return true;
   };
   clearGraph = () => {
-    if (!this.ctx) return false;
+    if (!this.ctx || !this.graphDimensions) return false;
     this.graphs = [];
-    this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+    this.ctx.clearRect(
+      0,
+      0,
+      this.graphDimensions.width,
+      this.graphDimensions.height
+    );
     this.initialize();
     return true;
   };
 
   rerenderGraph = () => {
-    if (!this.ctx || !this._center) return false;
-    this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+    if (!this.ctx || !this._center || !this.graphDimensions) return false;
+    this.ctx.clearRect(
+      0,
+      0,
+      this.graphDimensions.width,
+      this.graphDimensions.height
+    );
     this.drawGrid(this._center);
     this.drawAxis(this._center);
     for (const graph of this.graphs) {
@@ -442,7 +476,8 @@ export class Graph {
 
   showFunctionValuesAtPos = (x: number, y: number): boolean => {
     const relativeCoords = this.getRelativeCoordsFromAbsolute(x, 0);
-    if (!relativeCoords || !this.ctx || !this._center) return false;
+    if (!relativeCoords || !this.ctx || !this._center || !this.graphDimensions)
+      return false;
 
     this.rerenderGraph();
     for (const graph of this.graphs) {
@@ -459,8 +494,8 @@ export class Graph {
       );
     }
 
-    this.ctx.fillRect(x, 0, 1, this.ctx.canvas.height);
-    this.ctx.fillRect(0, y, this.ctx.canvas.width, 1);
+    this.ctx.fillRect(x, 0, 1, this.graphDimensions.height);
+    this.ctx.fillRect(0, y, this.graphDimensions.width, 1);
     return true;
   };
 }

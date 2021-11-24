@@ -9,6 +9,7 @@ import { IoMdAddCircle } from 'react-icons/io';
 import { Graph } from '../graph';
 import { getObjectFitSize } from '../utils/getObjectFitSize';
 import { randomRGBColor } from '../utils/random';
+import DocsModal from './DocsModal';
 import GraphList from './GraphList';
 export interface CanvasProps {}
 
@@ -54,9 +55,18 @@ const Canvas: React.FC<CanvasProps> = () => {
   const showValueAtXRef = useRef<boolean>(showValueAtX);
   showValueAtXRef.current = showValueAtX;
 
+  const [isDocsModalOpen, setIsDocsModalOpen] = useState<boolean>(false);
+  const resetPosition = () => {
+    if (!graph.current || !canvas.current) return;
+    graph.current.moveGraphAbsolute(
+      canvas.current.width / 2,
+      canvas.current.height / 2
+    );
+    graph.current.resetZoom();
+  };
+
   useEffect(() => {
     if (!canvas.current) return;
-
     const dimensions = getObjectFitSize(
       true,
       canvas.current.clientWidth,
@@ -64,9 +74,9 @@ const Canvas: React.FC<CanvasProps> = () => {
       canvas.current.width,
       canvas.current.height
     );
-
     canvas.current.width = dimensions.width;
     canvas.current.height = dimensions.height;
+
     graph.current = new Graph(canvas.current);
 
     graph.current.initialize();
@@ -93,6 +103,33 @@ const Canvas: React.FC<CanvasProps> = () => {
       setRelativeCoords(relCoords);
       if (showValueAtXRef.current) {
         graph.current.showFunctionValuesAtPos(e.x, e.y);
+      }
+    });
+    // for touch devices
+    let prevTouch: Touch | null = null;
+    canvas.current.addEventListener('touchend', stopDrag);
+    canvas.current.addEventListener('touchcancel', stopDrag);
+    canvas.current.addEventListener('touchmove', (e) => {
+      if (!graph.current || !canvas.current) return;
+      const touch = e.touches[0];
+      if (prevTouch) {
+        const movementX = touch.pageX - prevTouch.pageX;
+        const movementY = touch.pageY - prevTouch.pageY;
+
+        if (dragging) {
+          canvas.current?.classList.add('dragging');
+          graph.current.moveGraph(movementX, movementY);
+        }
+        const relCoords = graph.current.getRelativeCoordsFromAbsolute(
+          touch.pageX,
+          touch.pageY
+        );
+        if (!relCoords) return;
+
+        setRelativeCoords(relCoords);
+        if (showValueAtXRef.current) {
+          graph.current.showFunctionValuesAtPos(touch.pageX, touch.pageY);
+        }
       }
     });
 
@@ -146,105 +183,105 @@ const Canvas: React.FC<CanvasProps> = () => {
   };
 
   return (
-    <div>
-      <div
-        className="toolbox-control"
-        onClick={() => setToolBoxOpen(!toolboxOpen)}
-      >
-        {toolboxOpen ? <FaChevronLeft /> : <FaChevronRight />}
-      </div>
-      <div
-        className="toolbox"
-        style={{ visibility: toolboxOpen ? 'visible' : 'hidden' }}
-      >
-        <GraphList graphs={graphInputs} setGraphInputs={setGraphInputs} />
-        <div className="add-graph" onClick={addGraph} ref={addGraphRef}>
-          <IoMdAddCircle />
+    <>
+      <div>
+        <div
+          className="toolbox-control"
+          onClick={() => setToolBoxOpen(!toolboxOpen)}
+        >
+          {toolboxOpen ? <FaChevronLeft /> : <FaChevronRight />}
         </div>
-        <hr />
-        <div className="toolbox-options">
-          <div>
-            <b>Options:</b>
+        <div
+          className="toolbox"
+          style={{ visibility: toolboxOpen ? 'visible' : 'hidden' }}
+        >
+          <GraphList graphs={graphInputs} setGraphInputs={setGraphInputs} />
+          <div className="add-graph" onClick={addGraph} ref={addGraphRef}>
+            <IoMdAddCircle />
           </div>
-          <table className="options-table">
-            <tbody>
-              <tr>
-                <td>detail:</td>
-                <td>
-                  <input
-                    type="range"
-                    min={1}
-                    max={20}
-                    value={graphDetail}
-                    onChange={(e) => setGraphDetail(parseInt(e.target.value))}
-                  />
-                  <b>{graphDetail}</b>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <hr />
+          <div className="toolbox-options">
+            <div>
+              <b>Options:</b>
+            </div>
+            <table className="options-table">
+              <tbody>
+                <tr>
+                  <td>detail:</td>
+                  <td>
+                    <input
+                      type="range"
+                      min={1}
+                      max={20}
+                      value={graphDetail}
+                      onChange={(e) => setGraphDetail(parseInt(e.target.value))}
+                    />
+                    <b>{graphDetail}</b>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <hr />
+          <div>
+            <button onClick={() => setIsDocsModalOpen(true)}>Docs</button>
+          </div>
+        </div>
+        <canvas id="graph" ref={canvas}></canvas>
+        <div className="graph-info">
+          <div className="relative-wrap">
+            X:{' '}
+            <div className="relative-value">{relativeCoords.x.toFixed(2)}</div>
+          </div>
+          <div className="relative-wrap">
+            Y:{' '}
+            <div className="relative-value">{relativeCoords.y.toFixed(2)}</div>
+          </div>
+        </div>
+        <div className="toolbar">
+          <div
+            className={'toolbar-item' + (!showValueAtX ? ' disabled' : '')}
+            onClick={() => {
+              if (showValueAtXRef) {
+                graph.current?.rerenderGraph();
+              }
+              setShowValueAtX(!showValueAtX);
+            }}
+          >
+            <AiOutlineAim />
+          </div>
+          <div
+            className="toolbar-item"
+            onClick={() => {
+              if (!graph.current || !canvas.current) return;
+              graph.current.moveGraphAbsolute(
+                canvas.current.width / 2,
+                canvas.current.height / 2
+              );
+              graph.current.resetZoom();
+            }}
+          >
+            <FaHome />
+          </div>
+          <div className="toolbar-item" onClick={() => resetPosition()}>
+            <AiOutlineZoomIn />
+          </div>
+          <div
+            className="toolbar-item"
+            onClick={() => {
+              if (!canvas.current) return;
+              graph.current?.zoomGraph(-ZOOM_STEP, {
+                x: canvas.current.width / 2,
+                y: canvas.current.height / 2,
+              });
+            }}
+          >
+            <AiOutlineZoomOut />
+          </div>
         </div>
       </div>
-      <canvas id="graph" ref={canvas}></canvas>
-      <div className="graph-info">
-        <div className="relative-wrap">
-          X: <div className="relative-value">{relativeCoords.x.toFixed(2)}</div>
-        </div>
-        <div className="relative-wrap">
-          Y: <div className="relative-value">{relativeCoords.y.toFixed(2)}</div>
-        </div>
-      </div>
-      <div className="toolbar">
-        <div
-          className={'toolbar-item' + (!showValueAtX ? ' disabled' : '')}
-          onClick={() => {
-            if (showValueAtXRef) {
-              graph.current?.rerenderGraph();
-            }
-            setShowValueAtX(!showValueAtX);
-          }}
-        >
-          <AiOutlineAim />
-        </div>
-        <div
-          className="toolbar-item"
-          onClick={() => {
-            if (!graph.current || !canvas.current) return;
-            graph.current.moveGraphAbsolute(
-              canvas.current.width / 2,
-              canvas.current.height / 2
-            );
-            graph.current.resetZoom();
-          }}
-        >
-          <FaHome />
-        </div>
-        <div
-          className="toolbar-item"
-          onClick={() => {
-            if (!canvas.current) return;
-            graph.current?.zoomGraph(ZOOM_STEP, {
-              x: canvas.current.width / 2,
-              y: canvas.current.height / 2,
-            });
-          }}
-        >
-          <AiOutlineZoomIn />
-        </div>
-        <div
-          className="toolbar-item"
-          onClick={() => {
-            if (!canvas.current) return;
-            graph.current?.zoomGraph(-ZOOM_STEP, {
-              x: canvas.current.width / 2,
-              y: canvas.current.height / 2,
-            });
-          }}
-        >
-          <AiOutlineZoomOut />
-        </div>
-      </div>
-    </div>
+      <DocsModal isOpen={isDocsModalOpen} setIsOpen={setIsDocsModalOpen} />
+    </>
   );
 };
 

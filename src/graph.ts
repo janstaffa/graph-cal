@@ -498,4 +498,11 @@ export class Graph {
     this.ctx.fillRect(0, y, this.graphDimensions.width, 1);
     return true;
   };
+  resizeGraph = (newWidth: number, newHeight: number) => {
+    this.graphDimensions = {
+      width: newWidth,
+      height: newHeight,
+    };
+    this.rerenderGraph();
+  };
 }

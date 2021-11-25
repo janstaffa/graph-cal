@@ -7,7 +7,6 @@ import {
 import { FaChevronLeft, FaChevronRight, FaHome } from 'react-icons/fa';
 import { IoMdAddCircle } from 'react-icons/io';
 import { Graph } from '../graph';
-import { getObjectFitSize } from '../utils/getObjectFitSize';
 import { randomRGBColor } from '../utils/random';
 import DocsModal from './DocsModal';
 import GraphList from './GraphList';
@@ -40,7 +39,9 @@ const Canvas: React.FC<CanvasProps> = () => {
 
   const addGraphRef = useRef<HTMLDivElement>(null);
 
-  const [toolboxOpen, setToolBoxOpen] = useState<boolean>(true);
+  const [toolboxOpen, setToolBoxOpen] = useState<boolean>(
+    window.innerWidth > 400
+  );
 
   const [graphDetail, setGraphDetail] = useState<number>(15);
   const graphDetailRef = useRef<number>(graphDetail);
@@ -67,15 +68,8 @@ const Canvas: React.FC<CanvasProps> = () => {
 
   useEffect(() => {
     if (!canvas.current) return;
-    const dimensions = getObjectFitSize(
-      true,
-      canvas.current.clientWidth,
-      canvas.current.clientHeight,
-      canvas.current.width,
-      canvas.current.height
-    );
-    canvas.current.width = dimensions.width;
-    canvas.current.height = dimensions.height;
+    canvas.current.width = window.innerWidth;
+    canvas.current.height = window.innerHeight;
 
     graph.current = new Graph(canvas.current);
 
@@ -107,8 +101,12 @@ const Canvas: React.FC<CanvasProps> = () => {
     });
     // for touch devices
     let prevTouch: Touch | null = null;
-    canvas.current.addEventListener('touchend', stopDrag);
-    canvas.current.addEventListener('touchcancel', stopDrag);
+    const stopTouch = () => {
+      canvas.current?.classList.remove('dragging');
+      prevTouch = null;
+    };
+    canvas.current.addEventListener('touchend', stopTouch);
+    canvas.current.addEventListener('touchcancel', stopTouch);
     canvas.current.addEventListener('touchmove', (e) => {
       if (!graph.current || !canvas.current) return;
       const touch = e.touches[0];
@@ -116,10 +114,8 @@ const Canvas: React.FC<CanvasProps> = () => {
         const movementX = touch.pageX - prevTouch.pageX;
         const movementY = touch.pageY - prevTouch.pageY;
 
-        if (dragging) {
-          canvas.current?.classList.add('dragging');
-          graph.current.moveGraph(movementX, movementY);
-        }
+        canvas.current?.classList.add('dragging');
+        graph.current.moveGraph(movementX, movementY);
         const relCoords = graph.current.getRelativeCoordsFromAbsolute(
           touch.pageX,
           touch.pageY
@@ -131,8 +127,19 @@ const Canvas: React.FC<CanvasProps> = () => {
           graph.current.showFunctionValuesAtPos(touch.pageX, touch.pageY);
         }
       }
+      prevTouch = touch;
     });
 
+    window.addEventListener('resize', () => {
+      if (!graph.current || !canvas.current) return;
+      canvas.current.width = window.innerWidth;
+      canvas.current.height = window.innerHeight;
+      graph.current.resizeGraph(window.innerWidth, window.innerHeight);
+      graph.current.moveGraphAbsolute(
+        window.innerWidth / 2,
+        window.innerHeight / 2
+      );
+    });
     canvas.current.addEventListener('wheel', (e: WheelEvent) => {
       if (!graph.current) return;
       let zoomDelta = ZOOM_STEP;
@@ -223,7 +230,7 @@ const Canvas: React.FC<CanvasProps> = () => {
             </table>
           </div>
           <hr />
-          <div>
+          <div className="docs-button">
             <button onClick={() => setIsDocsModalOpen(true)}>Docs</button>
           </div>
         </div>

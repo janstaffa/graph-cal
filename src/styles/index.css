@@ -8,7 +8,8 @@ body {
   height: 100vh;
 }
 
-#root {
+#root,
+html {
   width: 100%;
   height: 100%;
 }
@@ -20,7 +21,7 @@ main {
 }
 
 canvas#graph {
-  width: auto;
+  width: 100%;
   height: 100vh;
   margin-top: -2px;
   z-index: 0;
@@ -34,7 +35,8 @@ canvas#graph.dragging {
   position: absolute;
   top: 0;
   left: 0;
-  width: 400px;
+  max-width: 400px;
+  width: 100%;
   height: auto;
   background-color: #ffffffaf;
   display: flex;
@@ -62,8 +64,8 @@ canvas#graph.dragging {
 
 .color-code {
   --radius: 10px;
-  width: calc(2 * var(--radius));
-  height: calc(2 * var(--radius));
+  min-width: calc(2 * var(--radius));
+  min-height: calc(2 * var(--radius));
   border-radius: 50%;
   border: 1px solid black;
   margin: 0 10px;
@@ -76,11 +78,10 @@ canvas#graph.dragging {
   background-color: white;
   box-sizing: border-box;
   border-width: 1px 0 1px 1px;
-  /* border-style: solid; */
   border-color: gray;
   height: 100%;
   padding-left: 10px;
-  min-width: max-content;
+  /* min-width: max-content; */
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -228,13 +229,16 @@ hr {
 .function-input-wrap {
   position: relative;
 }
+.function-input-wrap input {
+  width: calc(100% - 30px);
+}
 .function-interval {
   position: absolute;
   top: 0;
-  right: 0;
+  right: 3px;
   height: 100%;
   width: auto;
-  background-color: white;
+  background-color: #ffffffef;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -246,6 +250,7 @@ hr {
 .function-interval input {
   width: 120px;
   font-size: 16px;
+  background-color: transparent;
 }
 .function-interval-toggle {
   height: 100%;
@@ -317,4 +322,8 @@ code {
 
 ul li {
   font-weight: bold;
+  margin-top: 5px;
+}
+.docs-button {
+  width: 100%;
 }

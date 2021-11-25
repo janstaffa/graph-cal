@@ -144,6 +144,21 @@ const DocsModal: React.FC<DocsModalProps> = ({ isOpen, setIsOpen }) => {
                 </tr>
               </tbody>
             </table>
+            <li>Examples:</li>
+            <ul>
+              <li>
+                square wave: <code>mod(abs(int(x)), 2)-1/2</code>
+              </li>
+              <li>
+                puny single diode rectifier: <code>max(0, sin(x))</code>
+              </li>
+              <li>
+                FULL BRIDGE RECTIFIER: <code>abs(sin(x))</code>
+              </li>
+              <li>
+                triangle wave: <code>min(mod(x, 2), abs(mod(-x, 2)))-0.5</code>
+              </li>
+            </ul>
           </ul>
         </div>
       </div>

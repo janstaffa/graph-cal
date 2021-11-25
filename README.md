@@ -1,4 +1,4 @@
-# garph-cal
+# <a href="https://janstaffa.github.io/calculator/" target="_blank">garph-cal</a>
 
 A graphing calculator made in React.
 

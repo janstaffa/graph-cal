@@ -257,20 +257,19 @@ const Canvas: React.FC<CanvasProps> = () => {
           >
             <AiOutlineAim />
           </div>
+          <div className="toolbar-item" onClick={resetPosition}>
+            <FaHome />
+          </div>
           <div
             className="toolbar-item"
             onClick={() => {
-              if (!graph.current || !canvas.current) return;
-              graph.current.moveGraphAbsolute(
-                canvas.current.width / 2,
-                canvas.current.height / 2
-              );
-              graph.current.resetZoom();
+              if (!canvas.current) return;
+              graph.current?.zoomGraph(ZOOM_STEP, {
+                x: canvas.current.width / 2,
+                y: canvas.current.height / 2,
+              });
             }}
           >
-            <FaHome />
-          </div>
-          <div className="toolbar-item" onClick={() => resetPosition()}>
             <AiOutlineZoomIn />
           </div>
           <div

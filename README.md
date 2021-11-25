@@ -4,9 +4,9 @@ A graphing calculator made in React.
 
 <img src="/assets/preview.jpg" />
 
-## run:
+## CLI:
 
-```rust
+```console
 // yarn
 yarn start
 

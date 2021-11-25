@@ -1,14 +1,15 @@
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   background-color: #181818;
   width: 100vw;
   height: 100vh;
 }
 
-#root {
+#root,
+html {
   width: 100%;
   height: 100%;
 }
@@ -20,9 +21,8 @@ main {
 }
 
 canvas#graph {
-  width: auto;
+  width: 100%;
   height: 100vh;
-  /* transform: scale(1.01); */
   margin-top: -2px;
   z-index: 0;
   cursor: crosshair;
@@ -35,7 +35,8 @@ canvas#graph.dragging {
   position: absolute;
   top: 0;
   left: 0;
-  width: 400px;
+  max-width: 400px;
+  width: 100%;
   height: auto;
   background-color: #ffffffaf;
   display: flex;
@@ -63,8 +64,8 @@ canvas#graph.dragging {
 
 .color-code {
   --radius: 10px;
-  width: calc(2 * var(--radius));
-  height: calc(2 * var(--radius));
+  min-width: calc(2 * var(--radius));
+  min-height: calc(2 * var(--radius));
   border-radius: 50%;
   border: 1px solid black;
   margin: 0 10px;
@@ -77,11 +78,10 @@ canvas#graph.dragging {
   background-color: white;
   box-sizing: border-box;
   border-width: 1px 0 1px 1px;
-  /* border-style: solid; */
   border-color: gray;
   height: 100%;
   padding-left: 10px;
-  min-width: max-content;
+  /* min-width: max-content; */
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -222,4 +222,108 @@ hr {
 .graph-info .relative-value {
   text-align: right;
   width: 50px;
+}
+.function-name {
+  font-size: 15px;
+}
+.function-input-wrap {
+  position: relative;
+}
+.function-input-wrap input {
+  width: calc(100% - 30px);
+}
+.function-interval {
+  position: absolute;
+  top: 0;
+  right: 3px;
+  height: 100%;
+  width: auto;
+  background-color: #ffffffef;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  border: 1px solid gray;
+  padding: 0 5px;
+  box-sizing: border-box;
+  border-radius: 3px;
+}
+.function-interval input {
+  width: 120px;
+  font-size: 16px;
+  background-color: transparent;
+}
+.function-interval-toggle {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+.modal-content {
+  max-width: 800px;
+  width: 100%;
+  height: 800px;
+  background-color: white;
+  border-radius: 5px;
+  padding: 10px;
+  position: relative;
+  padding: 0 40px;
+  box-sizing: border-box;
+  overflow-y: scroll;
+  margin: 50px;
+}
+.modal-close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 35px;
+  cursor: pointer;
+  margin: 5px;
+  color: white;
+}
+
+.modal-content p {
+  text-align: justify;
+}
+code {
+  padding: 1px 5px;
+  font-size: 18px;
+  background-color: #eeeeee;
+}
+
+.table {
+  border: 1px solid black;
+  border-collapse: collapse;
+  box-sizing: border-box;
+  margin: 0 auto;
+}
+.table thead {
+  font-weight: bold;
+  border-bottom: 1px solid black;
+}
+
+.table tr td {
+  padding: 2px 5px;
+}
+
+.table tr td:first-child,
+.table tr td:last-child {
+  text-align: center;
+}
+
+.table tr:nth-child(odd) {
+  background-color: #ccc;
+}
+.table tr:nth-child(even) {
+  background-color: #fff;
+}
+
+ul li {
+  font-weight: bold;
+  margin-top: 5px;
+}
+.docs-button {
+  width: 100%;
 }
